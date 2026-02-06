@@ -6,8 +6,8 @@ local player = Players.LocalPlayer
 local CoinFarmer = {}
 
 local autoFarm = false
-local speed = 15
-local cooldown = 0.05
+local speed = 18
+local cooldown = 0.25
 local currentTween = nil
 
 local function getHRP()
