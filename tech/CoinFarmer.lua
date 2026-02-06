@@ -1,5 +1,5 @@
 -- ========================================
--- COIN FARMER - ULTRA FLUID
+-- COIN FARMER - IGNORE SERVER DELAYS
 -- ========================================
 
 local Players = game:GetService("Players")
@@ -9,11 +9,11 @@ local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local CoinFarmer = {}
 
--- ===== Variables internes =====
+-- ===== Variables =====
 local autoFarm = false
 local speed = 40 -- studs/sec
 
--- ===== Fonctions utilitaires =====
+-- ===== Utilitaires =====
 local function getHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
 	return char:WaitForChild("HumanoidRootPart")
@@ -43,24 +43,25 @@ local function findNearestCoin()
 	return nearest
 end
 
--- ===== Boucle principale ultra réactive =====
+-- ===== Boucle principale =====
 local function farmLoop()
 	local hrp = getHRP()
 	while autoFarm do
 		local coin = findNearestCoin()
-		if coin and coin.Parent then
-			RunService.Heartbeat:Wait()
-			while coin and coin.Parent and (hrp.Position - coin.Position).Magnitude > 2 and autoFarm do
+		if coin then
+			-- déplacer frame par frame
+			while coin and (hrp.Position - coin.Position).Magnitude > 3 and autoFarm do
 				local dir = (coin.Position - hrp.Position).Unit
 				hrp.CFrame = hrp.CFrame + dir * speed * RunService.Heartbeat:Wait()
 			end
+			-- dès que tu touches la coin (distance < 3), on skip directement à la suivante
 		else
-			RunService.Heartbeat:Wait()
+			RunService.Heartbeat:Wait() -- pas de coin dispo
 		end
 	end
 end
 
--- ===== API publique =====
+-- ===== API =====
 function CoinFarmer.setAutoFarm(state)
 	autoFarm = state
 	if state then
