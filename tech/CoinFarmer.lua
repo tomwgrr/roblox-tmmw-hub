@@ -1,75 +1,76 @@
--- ========================================
--- COIN FARMER - SMOOTH + IGNORE SERVER
--- ========================================
-
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local CoinFarmer = {}
 
--- ===== Variables =====
 local autoFarm = false
-local speed = 40 -- studs/sec
-local cooldown = 0.08 -- temps mini après chaque coin pour éviter lag
+local speed = 40
+local cooldown = 0.05
+local currentTween = nil
 
--- ===== Utilitaires =====
 local function getHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
 	return char:WaitForChild("HumanoidRootPart")
-end
-
-local function findCoins()
-	local coins = {}
-	for _, obj in pairs(Workspace:GetDescendants()) do
-		if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
-			table.insert(coins, obj)
-		end
-	end
-	return coins
 end
 
 local function findNearestCoin()
 	local hrp = getHRP()
 	local nearest = nil
 	local minDist = math.huge
-	for _, coin in pairs(findCoins()) do
-		local dist = (coin.Position - hrp.Position).Magnitude
-		if dist < minDist then
-			minDist = dist
-			nearest = coin
+	for _, obj in pairs(Workspace:GetDescendants()) do
+		if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
+			local dist = (obj.Position - hrp.Position).Magnitude
+			if dist < minDist then
+				minDist = dist
+				nearest = obj
+			end
 		end
 	end
 	return nearest
 end
 
--- ===== Boucle principale =====
-local function farmLoop()
+local function farmStep()
+	if not autoFarm then return end
 	local hrp = getHRP()
-	while autoFarm do
-		local coin = findNearestCoin()
-		if coin then
-			-- Déplacer frame par frame vers la coin
-			while coin and (hrp.Position - coin.Position).Magnitude > 3 and autoFarm do
-				local dir = (coin.Position - hrp.Position).Unit
-				hrp.CFrame = hrp.CFrame + dir * speed * RunService.Heartbeat:Wait()
-			end
-			-- Dès qu'on “touche” la coin, mini cooldown avant de passer à la suivante
-			if autoFarm then
-				task.wait(cooldown)
-			end
-		else
-			RunService.Heartbeat:Wait() -- pas de coin dispo
+	local coin = findNearestCoin()
+	if coin then
+		-- Annuler le tween précédent
+		if currentTween then
+			currentTween:Cancel()
+			currentTween = nil
 		end
+		local distance = (coin.Position - hrp.Position).Magnitude
+		if distance < 3 then
+			task.wait(cooldown)
+			task.spawn(farmStep)
+			return
+		end
+		local tweenTime = distance / speed
+		local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
+		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
+		currentTween.Completed:Connect(function()
+			currentTween = nil
+			task.wait(cooldown)
+			task.spawn(farmStep)
+		end)
+		currentTween:Play()
+	else
+		task.wait(0.1)
+		task.spawn(farmStep)
 	end
 end
 
--- ===== API =====
 function CoinFarmer.setAutoFarm(state)
 	autoFarm = state
 	if state then
-		task.spawn(farmLoop)
+		task.spawn(farmStep)
+	else
+		if currentTween then
+			currentTween:Cancel()
+			currentTween = nil
+		end
 	end
 end
 
@@ -78,7 +79,7 @@ function CoinFarmer.setSpeed(value)
 end
 
 function CoinFarmer.setCooldown(value)
-	cooldown = math.clamp(value, 0, 0.3) -- limite pour éviter lag
+	cooldown = math.clamp(value, 0, 0.3)
 end
 
 return CoinFarmer
