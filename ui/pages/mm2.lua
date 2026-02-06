@@ -2,10 +2,10 @@
 -- MURDER MYSTERY 2 PAGE
 -- ========================================
 
-local Components = require(script.Parent.Parent.components)
-local ESPSystem = require(script.Parent.Parent.Parent.tech.ESPSystem)
-local GunGrabber = require(script.Parent.Parent.Parent.tech.GunGrabber)
-local CoinFarmer = require(script.Parent.Parent.Parent.tech.CoinFarmer)
+local Components = getgenv().TMMW.Modules.Components
+local ESPSystem = getgenv().TMMW.Modules.ESPSystem
+local GunGrabber = getgenv().TMMW.Modules.GunGrabber
+local CoinFarmer = getgenv().TMMW.Modules.CoinFarmer
 
 local MM2Page = {}
 
@@ -19,10 +19,12 @@ function MM2Page.create(scrollFrame)
 	yOffset = yOffset + 10
 	
 	-- Player Info Toggle
-	Components.createToggle(scrollFrame, yOffset, "Player Info (Name & Role)", function(enabled)
-		ESPSystem.setPlayerInfoEnabled(enabled)
-	end)
-	yOffset = yOffset + 50
+	if ESPSystem then
+		Components.createToggle(scrollFrame, yOffset, "Player Info (Name & Role)", function(enabled)
+			ESPSystem.setPlayerInfoEnabled(enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- ===== CLASSIC MODE =====
 	local classicTitle = Instance.new("TextLabel")
@@ -38,50 +40,54 @@ function MM2Page.create(scrollFrame)
 	yOffset = yOffset + 30
 	
 	-- ESP Toggles pour Classic Mode
-	Components.createToggle(scrollFrame, yOffset, "Murderer ESP", function(enabled)
-		ESPSystem.toggleESP("Murderer", enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	Components.createToggle(scrollFrame, yOffset, "Sheriff ESP", function(enabled)
-		ESPSystem.toggleESP("Sheriff", enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	Components.createToggle(scrollFrame, yOffset, "Innocent ESP", function(enabled)
-		ESPSystem.toggleESP("Innocent", enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	Components.createToggle(scrollFrame, yOffset, "Gun (Dropped) ESP", function(enabled)
-		ESPSystem.toggleESP("Gun", enabled)
-	end)
-	yOffset = yOffset + 50
+	if ESPSystem then
+		Components.createToggle(scrollFrame, yOffset, "Murderer ESP", function(enabled)
+			ESPSystem.toggleESP("Murderer", enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		Components.createToggle(scrollFrame, yOffset, "Sheriff ESP", function(enabled)
+			ESPSystem.toggleESP("Sheriff", enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		Components.createToggle(scrollFrame, yOffset, "Innocent ESP", function(enabled)
+			ESPSystem.toggleESP("Innocent", enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		Components.createToggle(scrollFrame, yOffset, "Gun (Dropped) ESP", function(enabled)
+			ESPSystem.toggleESP("Gun", enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- Grab Gun Once Button
-	Components.createButton(scrollFrame, yOffset, "Grab Gun Once", "GRAB", function(button)
-		local success = GunGrabber.grabOnce()
-		if success then
-			button.Text = "✓ GRABBED"
-			button.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
-			task.wait(1)
-			button.Text = "GRAB"
-			button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-		else
-			button.Text = "NO GUN"
-			button.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-			task.wait(1)
-			button.Text = "GRAB"
-			button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-		end
-	end)
-	yOffset = yOffset + 50
-	
-	-- Auto Grab Gun Toggle
-	Components.createToggle(scrollFrame, yOffset, "Auto Grab Gun", function(enabled)
-		GunGrabber.setAutoGrab(enabled)
-	end)
-	yOffset = yOffset + 50
+	if GunGrabber then
+		Components.createButton(scrollFrame, yOffset, "Grab Gun Once", "GRAB", function(button)
+			local success = GunGrabber.grabOnce()
+			if success then
+				button.Text = "✓ GRABBED"
+				button.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
+				task.wait(1)
+				button.Text = "GRAB"
+				button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+			else
+				button.Text = "NO GUN"
+				button.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+				task.wait(1)
+				button.Text = "GRAB"
+				button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+			end
+		end)
+		yOffset = yOffset + 50
+		
+		-- Auto Grab Gun Toggle
+		Components.createToggle(scrollFrame, yOffset, "Auto Grab Gun", function(enabled)
+			GunGrabber.setAutoGrab(enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- ===== INFECTION MODE =====
 	local infectionTitle = Instance.new("TextLabel")
@@ -96,15 +102,17 @@ function MM2Page.create(scrollFrame)
 	infectionTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
-	Components.createToggle(scrollFrame, yOffset, "Zombie ESP", function(enabled)
-		ESPSystem.toggleESP("Zombie", enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	Components.createToggle(scrollFrame, yOffset, "Survivor ESP", function(enabled)
-		ESPSystem.toggleESP("Survivor", enabled)
-	end)
-	yOffset = yOffset + 50
+	if ESPSystem then
+		Components.createToggle(scrollFrame, yOffset, "Zombie ESP", function(enabled)
+			ESPSystem.toggleESP("Zombie", enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		Components.createToggle(scrollFrame, yOffset, "Survivor ESP", function(enabled)
+			ESPSystem.toggleESP("Survivor", enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- ===== FREEZE TAG =====
 	local freezeTitle = Instance.new("TextLabel")
@@ -119,15 +127,17 @@ function MM2Page.create(scrollFrame)
 	freezeTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
-	Components.createToggle(scrollFrame, yOffset, "Freezer ESP", function(enabled)
-		ESPSystem.toggleESP("Freezer", enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	Components.createToggle(scrollFrame, yOffset, "Runner ESP", function(enabled)
-		ESPSystem.toggleESP("Runner", enabled)
-	end)
-	yOffset = yOffset + 50
+	if ESPSystem then
+		Components.createToggle(scrollFrame, yOffset, "Freezer ESP", function(enabled)
+			ESPSystem.toggleESP("Freezer", enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		Components.createToggle(scrollFrame, yOffset, "Runner ESP", function(enabled)
+			ESPSystem.toggleESP("Runner", enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- ===== ASSASSIN MODE =====
 	local assassinTitle = Instance.new("TextLabel")
@@ -142,10 +152,12 @@ function MM2Page.create(scrollFrame)
 	assassinTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
-	Components.createToggle(scrollFrame, yOffset, "Assassin ESP", function(enabled)
-		ESPSystem.toggleESP("Assassin", enabled)
-	end)
-	yOffset = yOffset + 50
+	if ESPSystem then
+		Components.createToggle(scrollFrame, yOffset, "Assassin ESP", function(enabled)
+			ESPSystem.toggleESP("Assassin", enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- ===== MISCELLANEOUS =====
 	local miscTitle = Instance.new("TextLabel")
@@ -160,10 +172,12 @@ function MM2Page.create(scrollFrame)
 	miscTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
-	Components.createToggle(scrollFrame, yOffset, "Auto Farm Coins", function(enabled)
-		CoinFarmer.setAutoFarm(enabled)
-	end)
-	yOffset = yOffset + 50
+	if CoinFarmer then
+		Components.createToggle(scrollFrame, yOffset, "Auto Farm Coins", function(enabled)
+			CoinFarmer.setAutoFarm(enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- Ajuster la taille du canvas
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
