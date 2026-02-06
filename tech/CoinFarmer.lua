@@ -1,5 +1,5 @@
 -- ========================================
--- COIN FARMER - IGNORE SERVER DELAYS
+-- COIN FARMER - SMOOTH + IGNORE SERVER
 -- ========================================
 
 local Players = game:GetService("Players")
@@ -12,6 +12,7 @@ local CoinFarmer = {}
 -- ===== Variables =====
 local autoFarm = false
 local speed = 40 -- studs/sec
+local cooldown = 0.08 -- temps mini après chaque coin pour éviter lag
 
 -- ===== Utilitaires =====
 local function getHRP()
@@ -49,12 +50,15 @@ local function farmLoop()
 	while autoFarm do
 		local coin = findNearestCoin()
 		if coin then
-			-- déplacer frame par frame
+			-- Déplacer frame par frame vers la coin
 			while coin and (hrp.Position - coin.Position).Magnitude > 3 and autoFarm do
 				local dir = (coin.Position - hrp.Position).Unit
 				hrp.CFrame = hrp.CFrame + dir * speed * RunService.Heartbeat:Wait()
 			end
-			-- dès que tu touches la coin (distance < 3), on skip directement à la suivante
+			-- Dès qu'on “touche” la coin, mini cooldown avant de passer à la suivante
+			if autoFarm then
+				task.wait(cooldown)
+			end
 		else
 			RunService.Heartbeat:Wait() -- pas de coin dispo
 		end
@@ -71,6 +75,10 @@ end
 
 function CoinFarmer.setSpeed(value)
 	speed = math.clamp(value, 10, 200)
+end
+
+function CoinFarmer.setCooldown(value)
+	cooldown = math.clamp(value, 0, 0.3) -- limite pour éviter lag
 end
 
 return CoinFarmer
