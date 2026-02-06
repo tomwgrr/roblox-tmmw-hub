@@ -32,6 +32,25 @@ local originalFogEnd
 local antiAFKEnabled = false
 local antiAFKConnection = nil
 
+local flingEnabled = false
+local flingConnection = nil
+local originalPlatformStand = nil
+
+local spinbotEnabled = false
+local spinbotConnection = nil
+local spinSpeed = 20
+
+local headlessEnabled = false
+local originalHeadTransparency = nil
+local originalFaceTransparency = nil
+
+local godModeEnabled = false
+local godModeConnection = nil
+
+local autoClickEnabled = false
+local autoClickConnection = nil
+local clickDelay = 0.1
+
 function UniversalFeatures.initialize()
 	-- Rien à initialiser pour l'instant
 end
@@ -327,6 +346,212 @@ function UniversalFeatures.setRemoveTextures(enabled)
 				obj.Enabled = true
 			end
 		end
+	end
+end
+
+-- ===== FLING =====
+function UniversalFeatures.setFling(enabled)
+	flingEnabled = enabled
+	
+	if enabled then
+		local character = player.Character
+		if not character then return end
+		
+		local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if not humanoidRootPart or not humanoid then return end
+		
+		-- Sauvegarder l'état original
+		originalPlatformStand = humanoid.PlatformStand
+		
+		-- Créer le fling
+		local bodyAngularVelocity = Instance.new("BodyAngularVelocity")
+		bodyAngularVelocity.Name = "FlingVelocity"
+		bodyAngularVelocity.MaxTorque = Vector3.new(0, math.huge, 0)
+		bodyAngularVelocity.P = math.huge
+		bodyAngularVelocity.AngularVelocity = Vector3.new(0, 9e9, 0)
+		bodyAngularVelocity.Parent = humanoidRootPart
+		
+		humanoid.PlatformStand = true
+		
+		flingConnection = RunService.Heartbeat:Connect(function()
+			if not flingEnabled or not character or not humanoidRootPart then
+				if bodyAngularVelocity then bodyAngularVelocity:Destroy() end
+				if flingConnection then flingConnection:Disconnect() end
+				if humanoid then humanoid.PlatformStand = originalPlatformStand or false end
+				return
+			end
+		end)
+	else
+		local character = player.Character
+		if character then
+			local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			
+			if humanoidRootPart then
+				local bodyAngularVelocity = humanoidRootPart:FindFirstChild("FlingVelocity")
+				if bodyAngularVelocity then
+					bodyAngularVelocity:Destroy()
+				end
+			end
+			
+			if humanoid then
+				humanoid.PlatformStand = originalPlatformStand or false
+			end
+		end
+		
+		if flingConnection then
+			flingConnection:Disconnect()
+		end
+	end
+end
+
+-- ===== KICK PLAYER (CLIENT-SIDE) =====
+function UniversalFeatures.kickPlayer(targetPlayer)
+	-- Méthode client-side: rendre le joueur invisible localement
+	if targetPlayer.Character then
+		for _, part in pairs(targetPlayer.Character:GetDescendants()) do
+			if part:IsA("BasePart") or part:IsA("Decal") then
+				part.Transparency = 1
+			end
+		end
+		-- Déplacer le joueur très loin (client-side)
+		if targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			targetPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, -500, 0)
+		end
+	end
+end
+
+-- ===== SPINBOT =====
+function UniversalFeatures.setSpinbot(enabled)
+	spinbotEnabled = enabled
+	
+	if enabled then
+		spinbotConnection = RunService.RenderStepped:Connect(function()
+			if not spinbotEnabled then
+				if spinbotConnection then spinbotConnection:Disconnect() end
+				return
+			end
+			
+			local character = player.Character
+			if character and character:FindFirstChild("HumanoidRootPart") then
+				character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+			end
+		end)
+	else
+		if spinbotConnection then
+			spinbotConnection:Disconnect()
+		end
+	end
+end
+
+function UniversalFeatures.setSpinSpeed(speed)
+	spinSpeed = speed
+end
+
+-- ===== HEADLESS =====
+function UniversalFeatures.setHeadless(enabled)
+	headlessEnabled = enabled
+	local character = player.Character
+	
+	if character then
+		local head = character:FindFirstChild("Head")
+		if head then
+			if enabled then
+				originalHeadTransparency = head.Transparency
+				head.Transparency = 1
+				
+				-- Cacher la face
+				local face = head:FindFirstChild("face")
+				if face then
+					originalFaceTransparency = face.Transparency
+					face.Transparency = 1
+				end
+			else
+				head.Transparency = originalHeadTransparency or 0
+				
+				local face = head:FindFirstChild("face")
+				if face then
+					face.Transparency = originalFaceTransparency or 0
+				end
+			end
+		end
+	end
+end
+
+-- ===== GOD MODE (CLIENT-SIDE) =====
+function UniversalFeatures.setGodMode(enabled)
+	godModeEnabled = enabled
+	
+	if enabled then
+		godModeConnection = RunService.Heartbeat:Connect(function()
+			if not godModeEnabled then
+				if godModeConnection then godModeConnection:Disconnect() end
+				return
+			end
+			
+			local character = player.Character
+			if character then
+				local humanoid = character:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid.Health = humanoid.MaxHealth
+				end
+			end
+		end)
+	else
+		if godModeConnection then
+			godModeConnection:Disconnect()
+		end
+	end
+end
+
+-- ===== AUTO CLICK =====
+function UniversalFeatures.setAutoClick(enabled)
+	autoClickEnabled = enabled
+	
+	if enabled then
+		local VirtualInputManager = game:GetService("VirtualInputManager")
+		autoClickConnection = RunService.Heartbeat:Connect(function()
+			if not autoClickEnabled then
+				if autoClickConnection then autoClickConnection:Disconnect() end
+				return
+			end
+			
+			wait(clickDelay)
+			VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+			wait(0.01)
+			VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+		end)
+	else
+		if autoClickConnection then
+			autoClickConnection:Disconnect()
+		end
+	end
+end
+
+function UniversalFeatures.setAutoClickDelay(delay)
+	clickDelay = delay
+end
+
+-- ===== BRING ALL PLAYERS (CLIENT-SIDE) =====
+function UniversalFeatures.bringAllPlayers()
+	local character = player.Character
+	if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+	
+	local myPosition = character.HumanoidRootPart.CFrame
+	
+	for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+		if targetPlayer ~= player and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			targetPlayer.Character.HumanoidRootPart.CFrame = myPosition
+		end
+	end
+end
+
+-- ===== FREEZE CHARACTER =====
+function UniversalFeatures.setFreeze(enabled)
+	local character = player.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		character.HumanoidRootPart.Anchored = enabled
 	end
 end
 
