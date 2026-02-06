@@ -6,7 +6,7 @@ local player = Players.LocalPlayer
 local CoinFarmer = {}
 
 local autoFarm = false
-local speed = 40
+local speed = 25
 local cooldown = 0.05
 local currentTween = nil
 
