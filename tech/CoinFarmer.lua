@@ -6,7 +6,7 @@ local player = Players.LocalPlayer
 local CoinFarmer = {}
 
 local autoFarm = false
-local speed = 40
+local speed = 18       -- Vitesse réduite pour éviter le kick
 local cooldown = 0.05
 local currentTween = nil
 
@@ -45,8 +45,7 @@ local function farmStep()
 		-- Si trop proche, simuler la collecte et passer à la suivante
 		local distance = (coin.Position - hrp.Position).Magnitude
 		if distance < 3 then
-			-- “Ignorer” la pièce
-			coin.Parent = nil  -- juste pour côté client
+			coin.Parent = nil  -- côté client seulement
 			task.wait(cooldown)
 			task.spawn(farmStep)
 			return
@@ -80,7 +79,7 @@ function CoinFarmer.setAutoFarm(state)
 end
 
 function CoinFarmer.setSpeed(value)
-	speed = math.clamp(value, 10, 200)
+	speed = math.clamp(value, 10, 18) -- clamp max à 18 pour pas kick
 end
 
 function CoinFarmer.setCooldown(value)
