@@ -6,13 +6,27 @@ local player = Players.LocalPlayer
 local CoinFarmer = {}
 
 local autoFarm = false
-local speed = 21
-local cooldown = 0.1
+local speed = 18       -- vitesse réduite pour pas kick
+local cooldown = 0.05
 local currentTween = nil
 
+-- Fonction pour récupérer le HRP et le mettre couché
 local function getHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("HumanoidRootPart")
+	local hrp = char:WaitForChild("HumanoidRootPart")
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.PlatformStand = true -- empêche le perso de se relever
+	end
+	-- Rotation couchée sur le sol
+	hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(90),0,0)
+	-- Collisions désactivées côté client
+	for _, part in pairs(char:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.CanCollide = false
+		end
+	end
+	return hrp
 end
 
 local function findNearestCoin()
@@ -36,16 +50,14 @@ local function farmStep()
 	local hrp = getHRP()
 	local coin = findNearestCoin()
 	if coin then
-		-- Annuler le tween précédent
 		if currentTween then
 			currentTween:Cancel()
 			currentTween = nil
 		end
 
-		-- Si trop proche, simuler la collecte et passer à la suivante
 		local distance = (coin.Position - hrp.Position).Magnitude
 		if distance < 3 then
-			coin.Parent = nil  -- côté client seulement
+			coin.Parent = nil -- côté client seulement
 			task.wait(cooldown)
 			task.spawn(farmStep)
 			return
@@ -53,7 +65,7 @@ local function farmStep()
 
 		local tweenTime = distance / speed
 		local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
+		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame * CFrame.Angles(math.rad(90),0,0)})
 		currentTween.Completed:Connect(function()
 			currentTween = nil
 			task.wait(cooldown)
@@ -79,7 +91,7 @@ function CoinFarmer.setAutoFarm(state)
 end
 
 function CoinFarmer.setSpeed(value)
-	speed = math.clamp(value, 10, 18) -- clamp max à 18 pour pas kick
+	speed = math.clamp(value, 10, 18)
 end
 
 function CoinFarmer.setCooldown(value)
