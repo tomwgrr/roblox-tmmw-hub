@@ -11,6 +11,7 @@ local autoFarm = false
 local speed = 18 -- ralenti pour éviter kick
 local cooldown = 0.05
 local currentTween = nil
+local minDistanceToCoin = 100 -- distance minimale pour farmer
 
 local function getHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
@@ -40,7 +41,7 @@ local function findNearestCoin()
 	for _, obj in pairs(Workspace:GetDescendants()) do
 		if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
 			local dist = (obj.Position - hrp.Position).Magnitude
-			if dist < minDist then
+			if dist < minDist and dist >= minDistanceToCoin then
 				minDist = dist
 				nearest = obj
 			end
@@ -65,7 +66,6 @@ local function farmStep()
 			currentTween = nil
 		end
 
-		-- Si trop proche, simuler la collecte et passer à la suivante
 		local distance = (coin.Position - hrp.Position).Magnitude
 		if distance < 3 then
 			task.wait(cooldown)
@@ -83,7 +83,7 @@ local function farmStep()
 		end)
 		currentTween:Play()
 	else
-		task.wait(0.1)
+		task.wait(0.5)
 		task.spawn(farmStep)
 	end
 end
