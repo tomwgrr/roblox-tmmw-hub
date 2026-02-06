@@ -1,20 +1,18 @@
 -- ========================================
--- COIN FARMER (STABLE VERSION)
+-- COIN FARMER STABLE VERSION (MM2)
 -- ========================================
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local CoinFarmer = {}
 
+-- ========== Variables internes ==========
 local autoFarm = false
-local currentTween = nil
+local coinFolder = nil
 
--- Cache des coins
-local coinFolder
-
+-- ========== Fonctions utilitaires ==========
 local function getCharacter()
 	return player.Character or player.CharacterAdded:Wait()
 end
@@ -24,15 +22,16 @@ local function getHRP()
 	return char:WaitForChild("HumanoidRootPart")
 end
 
-local function getCoinFolder()
+local function findCoinFolder()
 	if coinFolder and coinFolder.Parent then
 		return coinFolder
 	end
 
-	for _, v in pairs(workspace:GetChildren()) do
-		if v.Name:lower():find("coin") then
-			coinFolder = v
-			return v
+	-- Cherche le parent des coins
+	for _, obj in pairs(workspace:GetChildren()) do
+		if obj.Name:lower():find("coin") then
+			coinFolder = obj
+			return obj
 		end
 	end
 
@@ -41,69 +40,58 @@ end
 
 local function findNearestCoin()
 	local hrp = getHRP()
-	local nearest, dist = nil, math.huge
+	local nearest = nil
+	local shortestDist = math.huge
 
-	for _, coin in pairs(getCoinFolder():GetDescendants()) do
+	for _, coin in pairs(findCoinFolder():GetDescendants()) do
 		if coin:IsA("BasePart") and coin.Name == "Coin_Server" then
-			local d = (coin.Position - hrp.Position).Magnitude
-			if d < dist then
-				dist = d
+			local dist = (coin.Position - hrp.Position).Magnitude
+			if dist < shortestDist then
+				shortestDist = dist
 				nearest = coin
 			end
 		end
 	end
 
-	return nearest, dist
+	return nearest
 end
 
+-- ========== Fonction de mouvement fluide ==========
 local function moveToCoin(coin)
 	local hrp = getHRP()
 	if not coin or not coin.Parent then return end
 
-	if currentTween then
-		currentTween:Cancel()
-		currentTween = nil
+	local speed = 40 -- studs/sec
+	while coin and coin.Parent and (hrp.Position - coin.Position).Magnitude > 2 do
+		local direction = (coin.Position - hrp.Position).Unit
+		hrp.CFrame = hrp.CFrame + direction * speed * RunService.RenderStepped:Wait()
 	end
-
-	local dist = (coin.Position - hrp.Position).Magnitude
-	if dist < 4 then
-		hrp.CFrame = coin.CFrame
-		return
-	end
-
-	local tweenTime = dist / 30
-	currentTween = TweenService:Create(
-		hrp,
-		TweenInfo.new(tweenTime, Enum.EasingStyle.Linear),
-		{ CFrame = coin.CFrame }
-	)
-
-	currentTween:Play()
-	currentTween.Completed:Wait()
-	currentTween = nil
 end
 
--- Boucle principale
+-- ========== Boucle principale ==========
 task.spawn(function()
 	while true do
 		if autoFarm then
 			local coin = findNearestCoin()
 			if coin then
-				moveToCoin(coin)
+				pcall(function()
+					moveToCoin(coin)
+				end)
+				-- Attendre un petit peu après la collecte
+				task.wait(0.05)
+			else
+				-- Pas de coin disponible
+				task.wait(0.2)
 			end
+		else
+			task.wait(0.5)
 		end
-		task.wait(0.15)
 	end
 end)
 
--- API
+-- ========== API publique ==========
 function CoinFarmer.setAutoFarm(state)
 	autoFarm = state
-
-	if not state and currentTween then
-		currentTween:Cancel()
-		currentTween = nil
-	end
 end
 
 return CoinFarmer
