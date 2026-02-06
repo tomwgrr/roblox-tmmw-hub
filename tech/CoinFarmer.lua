@@ -6,7 +6,7 @@ local player = Players.LocalPlayer
 local CoinFarmer = {}
 
 local autoFarm = false
-local speed = 18       -- Vitesse réduite pour éviter le kick
+local speed = 15
 local cooldown = 0.05
 local currentTween = nil
 
