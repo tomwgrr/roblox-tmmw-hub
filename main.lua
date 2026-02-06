@@ -112,11 +112,11 @@ LoadingScreen.show(playerGui)
 -- ========================================
 
 pcall(function()
-    GameDetection.initialize()
-    ESPSystem.initialize()
-    GunGrabber.initialize()
-    CoinFarmer.initialize()
-    UniversalFeatures.initialize()
+    if GameDetection then GameDetection.initialize() end
+    if ESPSystem then ESPSystem.initialize() end
+    if GunGrabber then GunGrabber.initialize() end
+    if CoinFarmer then CoinFarmer.initialize() end
+    if UniversalFeatures then UniversalFeatures.initialize() end
 end)
 
 -- ========================================
@@ -145,21 +145,27 @@ corner.Parent = mainFrame
 -- UI SETUP
 -- ========================================
 
-Header.create(mainFrame, gui)
+if Header then
+    Header.create(mainFrame, gui)
+end
 
-local sidebar = Sidebar.create(mainFrame)
-local contentManager = ContentManager.new(mainFrame)
+if Sidebar and ContentManager then
+    local sidebar = Sidebar.create(mainFrame)
+    local contentManager = ContentManager.new(mainFrame)
 
-contentManager:registerPage("Home", HomePage)
-contentManager:registerPage("MM2", MM2Page)
-contentManager:registerPage("Universal", UniversalPage)
+    if HomePage then contentManager:registerPage("Home", HomePage) end
+    if MM2Page then contentManager:registerPage("MM2", MM2Page) end
+    if UniversalPage then contentManager:registerPage("Universal", UniversalPage) end
 
-Sidebar.setupNavigation(sidebar, contentManager)
-contentManager:showPage("Home")
+    Sidebar.setupNavigation(sidebar, contentManager)
+    contentManager:showPage("Home")
+end
 
 -- ========================================
 -- DONE
 -- ========================================
 
 print("[TMMW] Hub chargé avec succès")
-print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
+if GameDetection then
+    print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
+end
