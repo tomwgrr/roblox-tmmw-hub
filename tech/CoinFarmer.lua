@@ -6,11 +6,11 @@ local player = Players.LocalPlayer
 local CoinFarmer = {}
 
 local autoFarm = false
-local speed = 18       -- vitesse réduite pour pas kick
+local speed = 18
 local cooldown = 0.05
 local currentTween = nil
 
--- Fonction pour récupérer le HRP et le mettre couché
+-- Récupère HRP et met perso couché
 local function getHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
 	local hrp = char:WaitForChild("HumanoidRootPart")
@@ -18,14 +18,7 @@ local function getHRP()
 	if humanoid then
 		humanoid.PlatformStand = true -- empêche le perso de se relever
 	end
-	-- Rotation couchée sur le sol
-	hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(90),0,0)
-	-- Collisions désactivées côté client
-	for _, part in pairs(char:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.CanCollide = false
-		end
-	end
+	hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(90), 0, 0)
 	return hrp
 end
 
@@ -55,9 +48,11 @@ local function farmStep()
 			currentTween = nil
 		end
 
+		local targetCFrame = CFrame.new(coin.Position.X, coin.Position.Y - 1, coin.Position.Z) * CFrame.Angles(math.rad(90),0,0)
+
 		local distance = (coin.Position - hrp.Position).Magnitude
 		if distance < 3 then
-			coin.Parent = nil -- côté client seulement
+			coin.Parent = nil
 			task.wait(cooldown)
 			task.spawn(farmStep)
 			return
@@ -65,7 +60,7 @@ local function farmStep()
 
 		local tweenTime = distance / speed
 		local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame * CFrame.Angles(math.rad(90),0,0)})
+		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
 		currentTween.Completed:Connect(function()
 			currentTween = nil
 			task.wait(cooldown)
