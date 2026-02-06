@@ -2,8 +2,8 @@
 -- UNIVERSAL PAGE
 -- ========================================
 
-local Components = require(script.Parent.Parent.components)
-local UniversalFeatures = require(script.Parent.Parent.Parent.tech.UniversalFeatures)
+local Components = getgenv().TMMW.Modules.Components
+local UniversalFeatures = getgenv().TMMW.Modules.UniversalFeatures
 
 local UniversalPage = {}
 
@@ -16,41 +16,43 @@ function UniversalPage.create(scrollFrame)
 	Components.createSeparator(scrollFrame, yOffset)
 	yOffset = yOffset + 10
 	
-	-- Fly Toggle
-	Components.createToggle(scrollFrame, yOffset, "Fly", function(enabled)
-		UniversalFeatures.setFly(enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	-- Fly Speed Slider
-	Components.createSlider(scrollFrame, yOffset, "Fly Speed", 10, 200, 50, function(value)
-		UniversalFeatures.setFlySpeed(value)
-	end)
-	yOffset = yOffset + 70
-	
-	-- Noclip
-	Components.createToggle(scrollFrame, yOffset, "Noclip", function(enabled)
-		UniversalFeatures.setNoclip(enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	-- WalkSpeed
-	Components.createSlider(scrollFrame, yOffset, "Walk Speed", 16, 200, 16, function(value)
-		UniversalFeatures.setWalkSpeed(value)
-	end)
-	yOffset = yOffset + 70
-	
-	-- JumpPower
-	Components.createSlider(scrollFrame, yOffset, "Jump Power", 50, 300, 50, function(value)
-		UniversalFeatures.setJumpPower(value)
-	end)
-	yOffset = yOffset + 70
-	
-	-- Infinite Jump
-	Components.createToggle(scrollFrame, yOffset, "Infinite Jump", function(enabled)
-		UniversalFeatures.setInfiniteJump(enabled)
-	end)
-	yOffset = yOffset + 50
+	if UniversalFeatures then
+		-- Fly Toggle
+		Components.createToggle(scrollFrame, yOffset, "Fly", function(enabled)
+			UniversalFeatures.setFly(enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		-- Fly Speed Slider
+		Components.createSlider(scrollFrame, yOffset, "Fly Speed", 10, 200, 50, function(value)
+			UniversalFeatures.setFlySpeed(value)
+		end)
+		yOffset = yOffset + 70
+		
+		-- Noclip
+		Components.createToggle(scrollFrame, yOffset, "Noclip", function(enabled)
+			UniversalFeatures.setNoclip(enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		-- WalkSpeed
+		Components.createSlider(scrollFrame, yOffset, "Walk Speed", 16, 200, 16, function(value)
+			UniversalFeatures.setWalkSpeed(value)
+		end)
+		yOffset = yOffset + 70
+		
+		-- JumpPower
+		Components.createSlider(scrollFrame, yOffset, "Jump Power", 50, 300, 50, function(value)
+			UniversalFeatures.setJumpPower(value)
+		end)
+		yOffset = yOffset + 70
+		
+		-- Infinite Jump
+		Components.createToggle(scrollFrame, yOffset, "Infinite Jump", function(enabled)
+			UniversalFeatures.setInfiniteJump(enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- ===== VISUAL SECTION =====
 	yOffset = yOffset + 10
@@ -59,35 +61,37 @@ function UniversalPage.create(scrollFrame)
 	Components.createSeparator(scrollFrame, yOffset)
 	yOffset = yOffset + 10
 	
-	-- X-Ray
-	Components.createToggle(scrollFrame, yOffset, "X-Ray", function(enabled)
-		UniversalFeatures.setXRay(enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	-- Fullbright
-	Components.createToggle(scrollFrame, yOffset, "Fullbright", function(enabled)
-		UniversalFeatures.setFullbright(enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	-- Remove Fog
-	Components.createToggle(scrollFrame, yOffset, "Remove Fog", function(enabled)
-		UniversalFeatures.setRemoveFog(enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	-- FOV Changer
-	Components.createSlider(scrollFrame, yOffset, "Field of View", 70, 120, 70, function(value)
-		UniversalFeatures.setFOV(value)
-	end)
-	yOffset = yOffset + 70
-	
-	-- ESP Distance
-	Components.createSlider(scrollFrame, yOffset, "ESP Distance", 100, 5000, 5000, function(value)
-		UniversalFeatures.setESPDistance(value)
-	end)
-	yOffset = yOffset + 70
+	if UniversalFeatures then
+		-- X-Ray
+		Components.createToggle(scrollFrame, yOffset, "X-Ray", function(enabled)
+			UniversalFeatures.setXRay(enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		-- Fullbright
+		Components.createToggle(scrollFrame, yOffset, "Fullbright", function(enabled)
+			UniversalFeatures.setFullbright(enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		-- Remove Fog
+		Components.createToggle(scrollFrame, yOffset, "Remove Fog", function(enabled)
+			UniversalFeatures.setRemoveFog(enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		-- FOV Changer
+		Components.createSlider(scrollFrame, yOffset, "Field of View", 70, 120, 70, function(value)
+			UniversalFeatures.setFOV(value)
+		end)
+		yOffset = yOffset + 70
+		
+		-- ESP Distance
+		Components.createSlider(scrollFrame, yOffset, "ESP Distance", 100, 5000, 5000, function(value)
+			UniversalFeatures.setESPDistance(value)
+		end)
+		yOffset = yOffset + 70
+	end
 	
 	-- ===== TELEPORT SECTION =====
 	yOffset = yOffset + 10
@@ -169,7 +173,9 @@ function UniversalPage.create(scrollFrame)
 				buttonCorner.Parent = playerButton
 				
 				playerButton.MouseButton1Click:Connect(function()
-					UniversalFeatures.teleportToPlayer(targetPlayer)
+					if UniversalFeatures then
+						UniversalFeatures.teleportToPlayer(targetPlayer)
+					end
 				end)
 				
 				playerButton.MouseEnter:Connect(function()
@@ -198,23 +204,25 @@ function UniversalPage.create(scrollFrame)
 	Components.createSeparator(scrollFrame, yOffset)
 	yOffset = yOffset + 10
 	
-	-- Remove Death Barriers
-	Components.createToggle(scrollFrame, yOffset, "Remove Death Barriers", function(enabled)
-		UniversalFeatures.setRemoveDeathBarriers(enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	-- Anti-AFK
-	Components.createToggle(scrollFrame, yOffset, "Anti-AFK", function(enabled)
-		UniversalFeatures.setAntiAFK(enabled)
-	end)
-	yOffset = yOffset + 50
-	
-	-- Remove Textures (FPS Boost)
-	Components.createToggle(scrollFrame, yOffset, "Remove Textures (FPS Boost)", function(enabled)
-		UniversalFeatures.setRemoveTextures(enabled)
-	end)
-	yOffset = yOffset + 50
+	if UniversalFeatures then
+		-- Remove Death Barriers
+		Components.createToggle(scrollFrame, yOffset, "Remove Death Barriers", function(enabled)
+			UniversalFeatures.setRemoveDeathBarriers(enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		-- Anti-AFK
+		Components.createToggle(scrollFrame, yOffset, "Anti-AFK", function(enabled)
+			UniversalFeatures.setAntiAFK(enabled)
+		end)
+		yOffset = yOffset + 50
+		
+		-- Remove Textures (FPS Boost)
+		Components.createToggle(scrollFrame, yOffset, "Remove Textures (FPS Boost)", function(enabled)
+			UniversalFeatures.setRemoveTextures(enabled)
+		end)
+		yOffset = yOffset + 50
+	end
 	
 	-- Ajuster la taille du canvas
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
