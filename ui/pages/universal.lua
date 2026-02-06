@@ -91,6 +91,12 @@ function UniversalPage.create(scrollFrame)
 			UniversalFeatures.setESPDistance(value)
 		end)
 		yOffset = yOffset + 70
+		
+		-- Headless
+		Components.createToggle(scrollFrame, yOffset, "Headless", function(enabled)
+			UniversalFeatures.setHeadless(enabled)
+		end)
+		yOffset = yOffset + 50
 	end
 	
 	-- ===== TELEPORT SECTION =====
@@ -153,79 +159,4 @@ function UniversalPage.create(scrollFrame)
 		
 		for _, targetPlayer in pairs(game.Players:GetPlayers()) do
 			if targetPlayer ~= player then
-				local playerButton = Instance.new("TextButton")
-				playerButton.Parent = playerScrollFrame
-				playerButton.Size = UDim2.new(1, -10, 0, 30)
-				playerButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-				playerButton.BorderSizePixel = 0
-				playerButton.Text = targetPlayer.Name
-				playerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-				playerButton.Font = Enum.Font.Gotham
-				playerButton.TextSize = 12
-				playerButton.TextXAlignment = Enum.TextXAlignment.Left
-				
-				local buttonPadding = Instance.new("UIPadding")
-				buttonPadding.PaddingLeft = UDim.new(0, 10)
-				buttonPadding.Parent = playerButton
-				
-				local buttonCorner = Instance.new("UICorner")
-				buttonCorner.CornerRadius = UDim.new(0, 4)
-				buttonCorner.Parent = playerButton
-				
-				playerButton.MouseButton1Click:Connect(function()
-					if UniversalFeatures then
-						UniversalFeatures.teleportToPlayer(targetPlayer)
-					end
-				end)
-				
-				playerButton.MouseEnter:Connect(function()
-					playerButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-				end)
-				
-				playerButton.MouseLeave:Connect(function()
-					playerButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-				end)
-			end
-		end
-		
-		playerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, playerListLayout.AbsoluteContentSize.Y)
-	end
-	
-	updatePlayerList()
-	game.Players.PlayerAdded:Connect(updatePlayerList)
-	game.Players.PlayerRemoving:Connect(updatePlayerList)
-	
-	yOffset = yOffset + 210
-	
-	-- ===== MISC SECTION =====
-	yOffset = yOffset + 10
-	Components.createSectionTitle(scrollFrame, yOffset, "Miscellaneous")
-	yOffset = yOffset + 35
-	Components.createSeparator(scrollFrame, yOffset)
-	yOffset = yOffset + 10
-	
-	if UniversalFeatures then
-		-- Remove Death Barriers
-		Components.createToggle(scrollFrame, yOffset, "Remove Death Barriers", function(enabled)
-			UniversalFeatures.setRemoveDeathBarriers(enabled)
-		end)
-		yOffset = yOffset + 50
-		
-		-- Anti-AFK
-		Components.createToggle(scrollFrame, yOffset, "Anti-AFK", function(enabled)
-			UniversalFeatures.setAntiAFK(enabled)
-		end)
-		yOffset = yOffset + 50
-		
-		-- Remove Textures (FPS Boost)
-		Components.createToggle(scrollFrame, yOffset, "Remove Textures (FPS Boost)", function(enabled)
-			UniversalFeatures.setRemoveTextures(enabled)
-		end)
-		yOffset = yOffset + 50
-	end
-	
-	-- Ajuster la taille du canvas
-	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
-end
-
-return UniversalPage
+				local p
