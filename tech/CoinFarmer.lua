@@ -6,20 +6,13 @@ local player = Players.LocalPlayer
 local CoinFarmer = {}
 
 local autoFarm = false
-local speed = 18
+local speed = 25
 local cooldown = 0.05
 local currentTween = nil
 
--- Récupère HRP et met perso couché
 local function getHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
-	local hrp = char:WaitForChild("HumanoidRootPart")
-	local humanoid = char:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		humanoid.PlatformStand = true -- empêche le perso de se relever
-	end
-	hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(90), 0, 0)
-	return hrp
+	return char:WaitForChild("HumanoidRootPart")
 end
 
 local function findNearestCoin()
@@ -43,16 +36,17 @@ local function farmStep()
 	local hrp = getHRP()
 	local coin = findNearestCoin()
 	if coin then
+		-- Annuler le tween précédent
 		if currentTween then
 			currentTween:Cancel()
 			currentTween = nil
 		end
 
-		local targetCFrame = CFrame.new(coin.Position.X, coin.Position.Y, coin.Position.Z) * CFrame.Angles(math.rad(90),0,0)
-
+		-- Si trop proche, simuler la collecte et passer à la suivante
 		local distance = (coin.Position - hrp.Position).Magnitude
 		if distance < 3 then
-			coin.Parent = nil
+			-- “Ignorer” la pièce
+			coin.Parent = nil  -- juste pour côté client
 			task.wait(cooldown)
 			task.spawn(farmStep)
 			return
@@ -60,7 +54,7 @@ local function farmStep()
 
 		local tweenTime = distance / speed
 		local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
 		currentTween.Completed:Connect(function()
 			currentTween = nil
 			task.wait(cooldown)
@@ -86,7 +80,7 @@ function CoinFarmer.setAutoFarm(state)
 end
 
 function CoinFarmer.setSpeed(value)
-	speed = math.clamp(value, 10, 18)
+	speed = math.clamp(value, 10, 200)
 end
 
 function CoinFarmer.setCooldown(value)
