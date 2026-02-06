@@ -1,5 +1,5 @@
 -- ========================================
--- COIN FARMER - STABLE & DYNAMIC
+-- COIN FARMER - ULTRA FLUID
 -- ========================================
 
 local Players = game:GetService("Players")
@@ -11,16 +11,11 @@ local CoinFarmer = {}
 
 -- ===== Variables internes =====
 local autoFarm = false
-local farmTask = nil
 local speed = 40 -- studs/sec
 
 -- ===== Fonctions utilitaires =====
-local function getCharacter()
-	return player.Character or player.CharacterAdded:Wait()
-end
-
 local function getHRP()
-	local char = getCharacter()
+	local char = player.Character or player.CharacterAdded:Wait()
 	return char:WaitForChild("HumanoidRootPart")
 end
 
@@ -48,28 +43,19 @@ local function findNearestCoin()
 	return nearest
 end
 
--- ===== Mouvement fluide vers la coin =====
-local function moveToCoin(coin)
-	local hrp = getHRP()
-	if not coin or not coin.Parent then return end
-
-	while coin and coin.Parent and (hrp.Position - coin.Position).Magnitude > 2 and autoFarm do
-		local dir = (coin.Position - hrp.Position).Unit
-		hrp.CFrame = hrp.CFrame + dir * speed * RunService.RenderStepped:Wait()
-	end
-end
-
--- ===== Boucle principale =====
+-- ===== Boucle principale ultra réactive =====
 local function farmLoop()
+	local hrp = getHRP()
 	while autoFarm do
 		local coin = findNearestCoin()
-		if coin then
-			pcall(function()
-				moveToCoin(coin)
-			end)
-			task.wait(0.05) -- petite pause après la collecte
+		if coin and coin.Parent then
+			RunService.Heartbeat:Wait()
+			while coin and coin.Parent and (hrp.Position - coin.Position).Magnitude > 2 and autoFarm do
+				local dir = (coin.Position - hrp.Position).Unit
+				hrp.CFrame = hrp.CFrame + dir * speed * RunService.Heartbeat:Wait()
+			end
 		else
-			task.wait(0.2) -- pas de coin dispo
+			RunService.Heartbeat:Wait()
 		end
 	end
 end
@@ -77,12 +63,11 @@ end
 -- ===== API publique =====
 function CoinFarmer.setAutoFarm(state)
 	autoFarm = state
-	if state and (not farmTask or not farmTask.Running) then
-		farmTask = task.spawn(farmLoop)
+	if state then
+		task.spawn(farmLoop)
 	end
 end
 
--- Optionnel : ajuster la vitesse dynamiquement
 function CoinFarmer.setSpeed(value)
 	speed = math.clamp(value, 10, 200)
 end
