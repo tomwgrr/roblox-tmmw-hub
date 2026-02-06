@@ -10,7 +10,48 @@ local Components = {}
 -- ========================================
 -- TOGGLE BUTTON
 -- ========================================
+-- Dans votre fichier Components.lua, ajoutez cette fonction :
 
+function Components.createButton(parent, yOffset, text, callback)
+	local button = Instance.new("TextButton")
+	button.Parent = parent
+	button.Size = UDim2.new(1, -20, 0, 40)
+	button.Position = UDim2.new(0, 10, 0, yOffset)
+	button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+	button.BorderSizePixel = 0
+	button.Text = text
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.Font = Enum.Font.GothamBold
+	button.TextSize = 14
+	button.AutoButtonColor = false
+	
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = button
+	
+	-- Animation hover
+	button.MouseEnter:Connect(function()
+		button.BackgroundColor3 = Color3.fromRGB(160, 60, 240)
+	end)
+	
+	button.MouseLeave:Connect(function()
+		button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+	end)
+	
+	-- Callback au clic
+	button.MouseButton1Click:Connect(function()
+		-- Animation de clic
+		button.BackgroundColor3 = Color3.fromRGB(100, 30, 180)
+		wait(0.1)
+		button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+		
+		if callback then
+			callback()
+		end
+	end)
+	
+	return button
+end
 function Components.createToggle(parent, yPos, labelText, callback)
 	local container = Instance.new("Frame")
 	container.Parent = parent
