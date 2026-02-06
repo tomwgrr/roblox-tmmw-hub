@@ -1,18 +1,20 @@
 -- ========================================
--- COIN FARMER STABLE VERSION (MM2)
+-- COIN FARMER - STABLE & DYNAMIC
 -- ========================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local CoinFarmer = {}
 
--- ========== Variables internes ==========
+-- ===== Variables internes =====
 local autoFarm = false
-local coinFolder = nil
+local farmTask = nil
+local speed = 40 -- studs/sec
 
--- ========== Fonctions utilitaires ==========
+-- ===== Fonctions utilitaires =====
 local function getCharacter()
 	return player.Character or player.CharacterAdded:Wait()
 end
@@ -22,76 +24,67 @@ local function getHRP()
 	return char:WaitForChild("HumanoidRootPart")
 end
 
-local function findCoinFolder()
-	if coinFolder and coinFolder.Parent then
-		return coinFolder
-	end
-
-	-- Cherche le parent des coins
-	for _, obj in pairs(workspace:GetChildren()) do
-		if obj.Name:lower():find("coin") then
-			coinFolder = obj
-			return obj
+local function findCoins()
+	local coins = {}
+	for _, obj in pairs(Workspace:GetDescendants()) do
+		if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
+			table.insert(coins, obj)
 		end
 	end
-
-	return workspace
+	return coins
 end
 
 local function findNearestCoin()
 	local hrp = getHRP()
 	local nearest = nil
-	local shortestDist = math.huge
-
-	for _, coin in pairs(findCoinFolder():GetDescendants()) do
-		if coin:IsA("BasePart") and coin.Name == "Coin_Server" then
-			local dist = (coin.Position - hrp.Position).Magnitude
-			if dist < shortestDist then
-				shortestDist = dist
-				nearest = coin
-			end
+	local minDist = math.huge
+	for _, coin in pairs(findCoins()) do
+		local dist = (coin.Position - hrp.Position).Magnitude
+		if dist < minDist then
+			minDist = dist
+			nearest = coin
 		end
 	end
-
 	return nearest
 end
 
--- ========== Fonction de mouvement fluide ==========
+-- ===== Mouvement fluide vers la coin =====
 local function moveToCoin(coin)
 	local hrp = getHRP()
 	if not coin or not coin.Parent then return end
 
-	local speed = 40 -- studs/sec
-	while coin and coin.Parent and (hrp.Position - coin.Position).Magnitude > 2 do
-		local direction = (coin.Position - hrp.Position).Unit
-		hrp.CFrame = hrp.CFrame + direction * speed * RunService.RenderStepped:Wait()
+	while coin and coin.Parent and (hrp.Position - coin.Position).Magnitude > 2 and autoFarm do
+		local dir = (coin.Position - hrp.Position).Unit
+		hrp.CFrame = hrp.CFrame + dir * speed * RunService.RenderStepped:Wait()
 	end
 end
 
--- ========== Boucle principale ==========
-task.spawn(function()
-	while true do
-		if autoFarm then
-			local coin = findNearestCoin()
-			if coin then
-				pcall(function()
-					moveToCoin(coin)
-				end)
-				-- Attendre un petit peu après la collecte
-				task.wait(0.05)
-			else
-				-- Pas de coin disponible
-				task.wait(0.2)
-			end
+-- ===== Boucle principale =====
+local function farmLoop()
+	while autoFarm do
+		local coin = findNearestCoin()
+		if coin then
+			pcall(function()
+				moveToCoin(coin)
+			end)
+			task.wait(0.05) -- petite pause après la collecte
 		else
-			task.wait(0.5)
+			task.wait(0.2) -- pas de coin dispo
 		end
 	end
-end)
+end
 
--- ========== API publique ==========
+-- ===== API publique =====
 function CoinFarmer.setAutoFarm(state)
 	autoFarm = state
+	if state and (not farmTask or not farmTask.Running) then
+		farmTask = task.spawn(farmLoop)
+	end
+end
+
+-- Optionnel : ajuster la vitesse dynamiquement
+function CoinFarmer.setSpeed(value)
+	speed = math.clamp(value, 10, 200)
 end
 
 return CoinFarmer
