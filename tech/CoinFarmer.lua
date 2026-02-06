@@ -48,7 +48,7 @@ local function farmStep()
 			currentTween = nil
 		end
 
-		local targetCFrame = CFrame.new(coin.Position.X, coin.Position.Y - 1, coin.Position.Z) * CFrame.Angles(math.rad(90),0,0)
+		local targetCFrame = CFrame.new(coin.Position.X, coin.Position.Y, coin.Position.Z) * CFrame.Angles(math.rad(90),0,0)
 
 		local distance = (coin.Position - hrp.Position).Magnitude
 		if distance < 3 then
