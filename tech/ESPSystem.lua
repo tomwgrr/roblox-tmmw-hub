@@ -3,7 +3,7 @@
 -- Gère tous les ESP (visuel des joueurs et objets)
 -- ========================================
 
-local GameDetection = require(script.Parent.GameDetection)
+local GameDetection = getgenv().TMMW.Modules.GameDetection
 
 local ESPSystem = {}
 
@@ -42,6 +42,11 @@ local gunESPObjects = {}
 local playerInfoEnabled = false
 
 function ESPSystem.initialize()
+	if not GameDetection then
+		warn("[ESP] GameDetection module not loaded")
+		return
+	end
+	
 	-- Surveillance périodique
 	task.spawn(function()
 		while task.wait(2) do
@@ -51,10 +56,12 @@ function ESPSystem.initialize()
 	end)
 	
 	-- Écouter les changements de rôle
-	GameDetection.onRoleChange(function(playerName, role)
-		task.wait(0.5)
-		ESPSystem.updateESP()
-	end)
+	if GameDetection.onRoleChange then
+		GameDetection.onRoleChange(function(playerName, role)
+			task.wait(0.5)
+			ESPSystem.updateESP()
+		end)
+	end
 	
 	-- Événements joueurs
 	game.Players.PlayerAdded:Connect(function(newPlayer)
@@ -199,6 +206,8 @@ function ESPSystem.updateGunESP()
 end
 
 function ESPSystem.updateESP()
+	if not GameDetection then return end
+	
 	-- Nettoyer
 	for _, espData in pairs(espObjects) do
 		if espData.highlight then espData.highlight:Destroy() end
@@ -210,7 +219,7 @@ function ESPSystem.updateESP()
 	
 	for _, targetPlayer in pairs(game.Players:GetPlayers()) do
 		if targetPlayer ~= player and targetPlayer.Character then
-			local role = GameDetection.getPlayerRole(targetPlayer)
+			local role = GameDetection.getPlayerRole and GameDetection.getPlayerRole(targetPlayer) or "NoRole"
 			local hasActiveESP = false
 			
 			if role == "NoRole" then
