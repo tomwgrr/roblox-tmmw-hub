@@ -1,64 +1,128 @@
 -- ========================================
--- TMMW HUB - MAIN ENTRY POINT
+-- TMMW HUB - MAIN HTTP ENTRY POINT
 -- ========================================
 
+-- Services
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- ========================================
--- SÉCURITÉ : DÉTRUIRE LES GUI EXISTANTS
+-- CONFIG GITHUB
 -- ========================================
 
-if playerGui:FindFirstChild("TMMWHubLoading") then
-	playerGui.TMMWHubLoading:Destroy()
-end
+local BASE_URL = "https://raw.githubusercontent.com/tomwgrr/roblox-tmmw-hub/main/"
 
-if playerGui:FindFirstChild("TMMWHubUI") then
-	playerGui.TMMWHubUI:Destroy()
-end
+-- ========================================
+-- GLOBAL ENV
+-- ========================================
+
+getgenv().TMMW = {
+    Modules = {},
+    Services = {
+        TweenService = TweenService,
+        UserInputService = UserInputService,
+        Players = Players,
+    }
+}
+
+local Modules = getgenv().TMMW.Modules
+
+-- ========================================
+-- SAFE GUI CLEANUP
+-- ========================================
+
+pcall(function()
+    if playerGui:FindFirstChild("TMMWHubLoading") then
+        playerGui.TMMWHubLoading:Destroy()
+    end
+    if playerGui:FindFirstChild("TMMWHubUI") then
+        playerGui.TMMWHubUI:Destroy()
+    end
+end)
 
 task.wait(0.1)
 
 -- ========================================
--- CHARGER LES MODULES
+-- MODULE LOADER
 -- ========================================
 
--- Module technique (logique métier)
-local GameDetection = require(script.Parent.tech.GameDetection)
-local ESPSystem = require(script.Parent.tech.ESPSystem)
-local GunGrabber = require(script.Parent.tech.GunGrabber)
-local CoinFarmer = require(script.Parent.tech.CoinFarmer)
-local UniversalFeatures = require(script.Parent.tech.UniversalFeatures)
+local function loadModule(path, name)
+    local success, result = pcall(function()
+        local src = game:HttpGet(BASE_URL .. path)
+        local module = loadstring(src)()
+        Modules[name] = module
+        return module
+    end)
 
--- Modules UI
-local LoadingScreen = require(script.Parent.ui.loading)
-local Header = require(script.Parent.ui.header)
-local Sidebar = require(script.Parent.ui.sidebar)
-local Components = require(script.Parent.ui.components)
-local ContentManager = require(script.Parent.ui.content)
+    if not success then
+        warn("[TMMW] Failed to load:", path)
+        warn(result)
+        return nil
+    end
+
+    return result
+end
+
+-- ========================================
+-- LOAD TECH MODULES
+-- ========================================
+
+local GameDetection     = loadModule("tech/GameDetection.lua", "GameDetection")
+local ESPSystem         = loadModule("tech/ESPSystem.lua", "ESPSystem")
+local GunGrabber        = loadModule("tech/GunGrabber.lua", "GunGrabber")
+local CoinFarmer        = loadModule("tech/CoinFarmer.lua", "CoinFarmer")
+local UniversalFeatures = loadModule("tech/UniversalFeatures.lua", "UniversalFeatures")
+
+-- ========================================
+-- LOAD UI MODULES
+-- ========================================
+
+local LoadingScreen  = loadModule("ui/loading.lua", "LoadingScreen")
+local Header         = loadModule("ui/header.lua", "Header")
+local Sidebar        = loadModule("ui/sidebar.lua", "Sidebar")
+local Components     = loadModule("ui/components.lua", "Components")
+local ContentManager = loadModule("ui/content.lua", "ContentManager")
 
 -- Pages
-local HomePage = require(script.Parent.ui.pages.home)
-local MM2Page = require(script.Parent.ui.pages.mm2)
-local UniversalPage = require(script.Parent.ui.pages.universal)
+local HomePage       = loadModule("ui/pages/home.lua", "HomePage")
+local MM2Page        = loadModule("ui/pages/mm2.lua", "MM2Page")
+local UniversalPage  = loadModule("ui/pages/universal.lua", "UniversalPage")
 
 -- ========================================
--- INITIALISATION
+-- BASIC VALIDATION
 -- ========================================
 
--- Afficher l'écran de chargement
+if not LoadingScreen or not ContentManager then
+    warn("[TMMW] Critical modules missing, abort.")
+    return
+end
+
+-- ========================================
+-- LOADING SCREEN
+-- ========================================
+
 LoadingScreen.show(playerGui)
 
--- Initialiser les systèmes techniques
-GameDetection.initialize()
-ESPSystem.initialize()
-GunGrabber.initialize()
-CoinFarmer.initialize()
-UniversalFeatures.initialize()
+-- ========================================
+-- INIT TECH SYSTEMS
+-- ========================================
 
--- Créer l'interface principale
+pcall(function()
+    GameDetection.initialize()
+    ESPSystem.initialize()
+    GunGrabber.initialize()
+    CoinFarmer.initialize()
+    UniversalFeatures.initialize()
+end)
+
+-- ========================================
+-- MAIN GUI
+-- ========================================
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "TMMWHubUI"
 gui.ResetOnSpawn = false
@@ -68,34 +132,34 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Parent = gui
 mainFrame.Size = UDim2.new(0, 600, 0, 400)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainFrame.AnchorPoint = Vector2.new(0.5, 0)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.ClipsDescendants = true
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 8)
-mainCorner.Parent = mainFrame
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
 
--- Créer le header avec contrôles
+-- ========================================
+-- UI SETUP
+-- ========================================
+
 Header.create(mainFrame, gui)
 
--- Créer la sidebar
 local sidebar = Sidebar.create(mainFrame)
-
--- Créer le gestionnaire de contenu
 local contentManager = ContentManager.new(mainFrame)
 
--- Enregistrer les pages
 contentManager:registerPage("Home", HomePage)
 contentManager:registerPage("MM2", MM2Page)
 contentManager:registerPage("Universal", UniversalPage)
 
--- Configurer la navigation de la sidebar
 Sidebar.setupNavigation(sidebar, contentManager)
-
--- Afficher la page par défaut
 contentManager:showPage("Home")
 
-print("TMMW Hub chargé avec succès!")
-print("Mode de jeu détecté:", GameDetection.getCurrentGameMode())
+-- ========================================
+-- DONE
+-- ========================================
+
+print("[TMMW] Hub chargé avec succès")
+print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
