@@ -41,12 +41,17 @@ local function farmStep()
 			currentTween:Cancel()
 			currentTween = nil
 		end
+
+		-- Si trop proche, simuler la collecte et passer à la suivante
 		local distance = (coin.Position - hrp.Position).Magnitude
 		if distance < 3 then
+			-- “Ignorer” la pièce
+			coin.Parent = nil  -- juste pour côté client
 			task.wait(cooldown)
 			task.spawn(farmStep)
 			return
 		end
+
 		local tweenTime = distance / speed
 		local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
 		currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
