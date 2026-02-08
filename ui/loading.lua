@@ -193,7 +193,7 @@ function LoadingScreen.show(playerGui)
 	})
 	subtitleFadeIn:Play()
 	
-	subtitle.Text = "Advanced Script Hub"
+	subtitle.Text = "Murder Mystery 2"
 	
 	-- Fade in de la barre de progression
 	local progressBgFadeIn = TweenService:Create(progressBarBg, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
