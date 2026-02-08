@@ -6,7 +6,6 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
-local MarketplaceService = game:GetService("MarketplaceService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -18,12 +17,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local BASE_URL = "https://raw.githubusercontent.com/tomwgrr/roblox-tmmw-hub/main/"
 
 -- ========================================
--- PREMIUM CONFIG
--- ========================================
-
-local PREMIUM_PASS_ID = 9696634781
-
--- ========================================
 -- GLOBAL ENV
 -- ========================================
 
@@ -33,51 +26,10 @@ getgenv().TMMW = {
         TweenService = TweenService,
         UserInputService = UserInputService,
         Players = Players,
-        MarketplaceService = MarketplaceService,
-    },
-    Config = {
-        PremiumPassID = PREMIUM_PASS_ID,
     }
 }
 
 local Modules = getgenv().TMMW.Modules
-
--- ========================================
--- PREMIUM SYSTEM
--- ========================================
-
-local PremiumSystem = {
-    isPremium = false,
-    checked = false
-}
-
-function PremiumSystem.check()
-    if PremiumSystem.checked then
-        return PremiumSystem.isPremium
-    end
-    
-    local success, result = pcall(function()
-        return MarketplaceService:UserOwnsGamePassAsync(player.UserId, PREMIUM_PASS_ID)
-    end)
-    
-    PremiumSystem.isPremium = success and result
-    PremiumSystem.checked = true
-    
-    if PremiumSystem.isPremium then
-        print("[TMMW] ✅ Premium access granted")
-    else
-        print("[TMMW] ❌ Free version - Premium features locked")
-    end
-    
-    return PremiumSystem.isPremium
-end
-
-function PremiumSystem.hasPremium()
-    return PremiumSystem.check()
-end
-
--- Expose le système premium globalement
-getgenv().TMMW.PremiumSystem = PremiumSystem
 
 -- ========================================
 -- SAFE GUI CLEANUP
@@ -114,12 +66,6 @@ local function loadModule(path, name)
 
     return result
 end
-
--- ========================================
--- CHECK PREMIUM BEFORE LOADING
--- ========================================
-
-PremiumSystem.check()
 
 -- ========================================
 -- LOAD TECH MODULES
@@ -220,7 +166,6 @@ end
 -- ========================================
 
 print("[TMMW] Hub chargé avec succès")
-print("[TMMW] Premium Status:", PremiumSystem.hasPremium() and "✅ ACTIVE" or "❌ INACTIVE")
 if GameDetection then
     print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
 end
