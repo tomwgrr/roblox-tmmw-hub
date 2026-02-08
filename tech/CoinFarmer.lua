@@ -6,7 +6,6 @@ local player = Players.LocalPlayer
 local PremiumSystem = getgenv().TMMW.PremiumSystem
 
 local CoinFarmer = {
-    -- Configuration Premium
     PREMIUM_FEATURES = {
         setAutoFarm = true,
         setSpeed = true,
@@ -18,10 +17,6 @@ local autoFarm = false
 local speed = 25
 local cooldown = 0.05
 local currentTween = nil
-
--- ========================================
--- CORE FUNCTIONS
--- ========================================
 
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
@@ -82,10 +77,6 @@ local function farmStep()
         task.spawn(farmStep)
     end
 end
-
--- ========================================
--- PUBLIC FUNCTIONS (PREMIUM PROTECTED)
--- ========================================
 
 function CoinFarmer.setAutoFarm(state)
     if not PremiumSystem.hasPremium() then
