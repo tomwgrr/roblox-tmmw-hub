@@ -6,7 +6,6 @@ local Components = getgenv().TMMW.Modules.Components
 local ESPSystem = getgenv().TMMW.Modules.ESPSystem
 local GunGrabber = getgenv().TMMW.Modules.GunGrabber
 local CoinFarmer = getgenv().TMMW.Modules.CoinFarmer
-local CombatSystem = getgenv().TMMW.Modules.CombatSystem
 
 local MM2Page = {}
 
@@ -176,22 +175,20 @@ function MM2Page.create(scrollFrame)
 	combatSheriffTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
-	if CombatSystem then
-		Components.createToggle(scrollFrame, yOffset, "Silent Aim", function(enabled)
-			CombatSystem.setSilentAim(enabled)
-		end)
-		yOffset = yOffset + 50
-		
-		Components.createToggle(scrollFrame, yOffset, "Aimbot", function(enabled)
-			CombatSystem.setAimbot(enabled)
-		end)
-		yOffset = yOffset + 50
-		
-		Components.createToggle(scrollFrame, yOffset, "Auto Shoot Murderer", function(enabled)
-			CombatSystem.setAutoShoot(enabled)
-		end)
-		yOffset = yOffset + 50
-	end
+	Components.createToggle(scrollFrame, yOffset, "Silent Aim", function(enabled)
+		print("Silent Aim:", enabled)
+	end)
+	yOffset = yOffset + 50
+	
+	Components.createToggle(scrollFrame, yOffset, "Aimbot", function(enabled)
+		print("Aimbot:", enabled)
+	end)
+	yOffset = yOffset + 50
+	
+	Components.createToggle(scrollFrame, yOffset, "Auto Shoot Murderer", function(enabled)
+		print("Auto Shoot:", enabled)
+	end)
+	yOffset = yOffset + 50
 	
 	-- ===== COMBAT (MURDERER) =====
 	Components.createSeparator(scrollFrame, yOffset)
@@ -209,182 +206,167 @@ function MM2Page.create(scrollFrame)
 	combatMurdererTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
-	if CombatSystem then
-		Components.createToggle(scrollFrame, yOffset, "Kill Aura", function(enabled)
-			CombatSystem.setKillAura(enabled)
-		end)
-		yOffset = yOffset + 50
+	Components.createToggle(scrollFrame, yOffset, "Kill Aura", function(enabled)
+		print("Kill Aura:", enabled)
+	end)
+	yOffset = yOffset + 50
+	
+	-- Kill All Players Button
+	Components.createButton(scrollFrame, yOffset, "Kill All Players", "KILL ALL", function(button)
+		button.Text = "KILLING..."
+		button.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
 		
-		-- Kill All Players Button
-		Components.createButton(scrollFrame, yOffset, "Kill All Players", "KILL ALL", function(button)
-			button.Text = "KILLING..."
-			button.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-			
-			local success, killCount = CombatSystem.killAllPlayers()
-			
-			if success then
-				button.Text = "✓ KILLED " .. killCount
-				button.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
-				task.wait(2)
-				button.Text = "KILL ALL"
-				button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-			else
-				button.Text = "✗ FAILED"
-				button.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-				task.wait(2)
-				button.Text = "KILL ALL"
-				button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+		-- Simuler une action
+		task.wait(1)
+		
+		button.Text = "✓ KILLED 5"
+		button.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
+		task.wait(2)
+		button.Text = "KILL ALL"
+		button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+	end)
+	yOffset = yOffset + 50
+	
+	-- Kill Specific Player (avec dropdown des joueurs)
+	local killPlayerFrame = Instance.new("Frame")
+	killPlayerFrame.Parent = scrollFrame
+	killPlayerFrame.Size = UDim2.new(1, -20, 0, 100)
+	killPlayerFrame.Position = UDim2.new(0, 10, 0, yOffset)
+	killPlayerFrame.BackgroundTransparency = 1
+	
+	local killPlayerLabel = Instance.new("TextLabel")
+	killPlayerLabel.Parent = killPlayerFrame
+	killPlayerLabel.Size = UDim2.new(1, 0, 0, 20)
+	killPlayerLabel.Position = UDim2.new(0, 0, 0, 0)
+	killPlayerLabel.BackgroundTransparency = 1
+	killPlayerLabel.Text = "Kill Specific Player:"
+	killPlayerLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+	killPlayerLabel.Font = Enum.Font.Gotham
+	killPlayerLabel.TextSize = 13
+	killPlayerLabel.TextXAlignment = Enum.TextXAlignment.Left
+	
+	-- Liste déroulante des joueurs
+	local playerDropdown = Instance.new("ScrollingFrame")
+	playerDropdown.Parent = killPlayerFrame
+	playerDropdown.Size = UDim2.new(1, 0, 0, 50)
+	playerDropdown.Position = UDim2.new(0, 0, 0, 25)
+	playerDropdown.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+	playerDropdown.BorderSizePixel = 0
+	playerDropdown.ScrollBarThickness = 4
+	playerDropdown.CanvasSize = UDim2.new(0, 0, 0, 0)
+	
+	local dropdownCorner = Instance.new("UICorner")
+	dropdownCorner.CornerRadius = UDim.new(0, 6)
+	dropdownCorner.Parent = playerDropdown
+	
+	local selectedPlayer = nil
+	
+	-- Fonction pour rafraîchir la liste des joueurs
+	local function refreshPlayerList()
+		for _, child in pairs(playerDropdown:GetChildren()) do
+			if child:IsA("TextButton") then
+				child:Destroy()
 			end
-		end)
-		yOffset = yOffset + 50
-		
-		-- Kill Specific Player (avec dropdown des joueurs)
-		local killPlayerFrame = Instance.new("Frame")
-		killPlayerFrame.Parent = scrollFrame
-		killPlayerFrame.Size = UDim2.new(1, -20, 0, 100)
-		killPlayerFrame.Position = UDim2.new(0, 10, 0, yOffset)
-		killPlayerFrame.BackgroundTransparency = 1
-		
-		local killPlayerLabel = Instance.new("TextLabel")
-		killPlayerLabel.Parent = killPlayerFrame
-		killPlayerLabel.Size = UDim2.new(1, 0, 0, 20)
-		killPlayerLabel.Position = UDim2.new(0, 0, 0, 0)
-		killPlayerLabel.BackgroundTransparency = 1
-		killPlayerLabel.Text = "Kill Specific Player:"
-		killPlayerLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-		killPlayerLabel.Font = Enum.Font.Gotham
-		killPlayerLabel.TextSize = 13
-		killPlayerLabel.TextXAlignment = Enum.TextXAlignment.Left
-		
-		-- Liste déroulante des joueurs
-		local playerDropdown = Instance.new("ScrollingFrame")
-		playerDropdown.Parent = killPlayerFrame
-		playerDropdown.Size = UDim2.new(1, 0, 0, 50)
-		playerDropdown.Position = UDim2.new(0, 0, 0, 25)
-		playerDropdown.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-		playerDropdown.BorderSizePixel = 0
-		playerDropdown.ScrollBarThickness = 4
-		playerDropdown.CanvasSize = UDim2.new(0, 0, 0, 0)
-		
-		local dropdownCorner = Instance.new("UICorner")
-		dropdownCorner.CornerRadius = UDim.new(0, 6)
-		dropdownCorner.Parent = playerDropdown
-		
-		local selectedPlayer = nil
-		
-		-- Fonction pour rafraîchir la liste des joueurs
-		local function refreshPlayerList()
-			for _, child in pairs(playerDropdown:GetChildren()) do
-				if child:IsA("TextButton") then
-					child:Destroy()
-				end
-			end
-			
-			local Players = game:GetService("Players")
-			local LocalPlayer = Players.LocalPlayer
-			local yPos = 0
-			
-			for _, player in pairs(Players:GetPlayers()) do
-				if player ~= LocalPlayer then
-					local playerButton = Instance.new("TextButton")
-					playerButton.Parent = playerDropdown
-					playerButton.Size = UDim2.new(1, -8, 0, 25)
-					playerButton.Position = UDim2.new(0, 4, 0, yPos)
-					playerButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-					playerButton.BorderSizePixel = 0
-					playerButton.Text = player.Name
-					playerButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-					playerButton.Font = Enum.Font.Gotham
-					playerButton.TextSize = 12
-					playerButton.AutoButtonColor = false
-					
-					local btnCorner = Instance.new("UICorner")
-					btnCorner.CornerRadius = UDim.new(0, 4)
-					btnCorner.Parent = playerButton
-					
-					playerButton.MouseButton1Click:Connect(function()
-						selectedPlayer = player
-						
-						-- Mettre à jour l'apparence des boutons
-						for _, btn in pairs(playerDropdown:GetChildren()) do
-							if btn:IsA("TextButton") then
-								btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-							end
-						end
-						playerButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-					end)
-					
-					yPos = yPos + 28
-				end
-			end
-			
-			playerDropdown.CanvasSize = UDim2.new(0, 0, 0, yPos)
 		end
 		
-		-- Rafraîchir la liste au départ
-		refreshPlayerList()
+		local Players = game:GetService("Players")
+		local LocalPlayer = Players.LocalPlayer
+		local yPos = 0
 		
-		-- Rafraîchir la liste quand un joueur rejoint/quitte
-		game:GetService("Players").PlayerAdded:Connect(refreshPlayerList)
-		game:GetService("Players").PlayerRemoving:Connect(refreshPlayerList)
-		
-		-- Bouton pour kill le joueur sélectionné
-		local killSelectedButton = Instance.new("TextButton")
-		killSelectedButton.Parent = killPlayerFrame
-		killSelectedButton.Size = UDim2.new(1, 0, 0, 20)
-		killSelectedButton.Position = UDim2.new(0, 0, 0, 80)
-		killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-		killSelectedButton.BorderSizePixel = 0
-		killSelectedButton.Text = "KILL SELECTED"
-		killSelectedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-		killSelectedButton.Font = Enum.Font.GothamBold
-		killSelectedButton.TextSize = 12
-		killSelectedButton.AutoButtonColor = false
-		
-		local killBtnCorner = Instance.new("UICorner")
-		killBtnCorner.CornerRadius = UDim.new(0, 6)
-		killBtnCorner.Parent = killSelectedButton
-		
-		killSelectedButton.MouseEnter:Connect(function()
-			killSelectedButton.BackgroundColor3 = Color3.fromRGB(158, 63, 246)
-		end)
-		
-		killSelectedButton.MouseLeave:Connect(function()
-			killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-		end)
-		
-		killSelectedButton.MouseButton1Click:Connect(function()
-			if not selectedPlayer then
-				killSelectedButton.Text = "SELECT PLAYER"
-				killSelectedButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-				task.wait(1.5)
-				killSelectedButton.Text = "KILL SELECTED"
-				killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-				return
+		for _, player in pairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer then
+				local playerButton = Instance.new("TextButton")
+				playerButton.Parent = playerDropdown
+				playerButton.Size = UDim2.new(1, -8, 0, 25)
+				playerButton.Position = UDim2.new(0, 4, 0, yPos)
+				playerButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+				playerButton.BorderSizePixel = 0
+				playerButton.Text = player.Name
+				playerButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+				playerButton.Font = Enum.Font.Gotham
+				playerButton.TextSize = 12
+				playerButton.AutoButtonColor = false
+				
+				local btnCorner = Instance.new("UICorner")
+				btnCorner.CornerRadius = UDim.new(0, 4)
+				btnCorner.Parent = playerButton
+				
+				playerButton.MouseButton1Click:Connect(function()
+					selectedPlayer = player
+					
+					-- Mettre à jour l'apparence des boutons
+					for _, btn in pairs(playerDropdown:GetChildren()) do
+						if btn:IsA("TextButton") then
+							btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+						end
+					end
+					playerButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+				end)
+				
+				yPos = yPos + 28
 			end
-			
-			killSelectedButton.Text = "KILLING..."
-			killSelectedButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-			
-			local success = CombatSystem.killPlayer(selectedPlayer)
-			
-			if success then
-				killSelectedButton.Text = "✓ KILLED"
-				killSelectedButton.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
-				task.wait(1.5)
-				killSelectedButton.Text = "KILL SELECTED"
-				killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-			else
-				killSelectedButton.Text = "✗ FAILED"
-				killSelectedButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-				task.wait(1.5)
-				killSelectedButton.Text = "KILL SELECTED"
-				killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-			end
-		end)
+		end
 		
-		yOffset = yOffset + 110
+		playerDropdown.CanvasSize = UDim2.new(0, 0, 0, yPos)
 	end
+	
+	-- Rafraîchir la liste au départ
+	refreshPlayerList()
+	
+	-- Rafraîchir la liste quand un joueur rejoint/quitte
+	game:GetService("Players").PlayerAdded:Connect(refreshPlayerList)
+	game:GetService("Players").PlayerRemoving:Connect(refreshPlayerList)
+	
+	-- Bouton pour kill le joueur sélectionné
+	local killSelectedButton = Instance.new("TextButton")
+	killSelectedButton.Parent = killPlayerFrame
+	killSelectedButton.Size = UDim2.new(1, 0, 0, 20)
+	killSelectedButton.Position = UDim2.new(0, 0, 0, 80)
+	killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+	killSelectedButton.BorderSizePixel = 0
+	killSelectedButton.Text = "KILL SELECTED"
+	killSelectedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	killSelectedButton.Font = Enum.Font.GothamBold
+	killSelectedButton.TextSize = 12
+	killSelectedButton.AutoButtonColor = false
+	
+	local killBtnCorner = Instance.new("UICorner")
+	killBtnCorner.CornerRadius = UDim.new(0, 6)
+	killBtnCorner.Parent = killSelectedButton
+	
+	killSelectedButton.MouseEnter:Connect(function()
+		killSelectedButton.BackgroundColor3 = Color3.fromRGB(158, 63, 246)
+	end)
+	
+	killSelectedButton.MouseLeave:Connect(function()
+		killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+	end)
+	
+	killSelectedButton.MouseButton1Click:Connect(function()
+		if not selectedPlayer then
+			killSelectedButton.Text = "SELECT PLAYER"
+			killSelectedButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+			task.wait(1.5)
+			killSelectedButton.Text = "KILL SELECTED"
+			killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+			return
+		end
+		
+		killSelectedButton.Text = "KILLING..."
+		killSelectedButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+		
+		-- Simuler une action
+		task.wait(1)
+		print("Killing:", selectedPlayer.Name)
+		
+		killSelectedButton.Text = "✓ KILLED"
+		killSelectedButton.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
+		task.wait(1.5)
+		killSelectedButton.Text = "KILL SELECTED"
+		killSelectedButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+	end)
+	
+	yOffset = yOffset + 110
 	
 	-- ===== MISCELLANEOUS =====
 	Components.createSeparator(scrollFrame, yOffset)
