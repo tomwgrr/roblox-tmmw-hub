@@ -28,10 +28,17 @@ end
 
 local function disableToggle(toggle)
 	if toggle and typeof(toggle) == "Instance" then
-		toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		toggle.BackgroundTransparency = 0.7
+		toggle.Active = false
+		
 		for _, child in pairs(toggle:GetChildren()) do
+			if child:IsA("TextLabel") then
+				child.TextTransparency = 0.6
+				child.TextStrokeTransparency = 1
+			end
 			if child.Name == "Switch" then
-				child.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+				child.BackgroundTransparency = 0.7
+				child.Active = false
 			end
 		end
 	end
@@ -39,7 +46,14 @@ end
 
 local function disableButton(button)
 	if button and typeof(button) == "Instance" then
-		button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		button.BackgroundTransparency = 0.7
+		button.Active = false
+		
+		for _, child in pairs(button:GetChildren()) do
+			if child:IsA("TextLabel") then
+				child.TextTransparency = 0.6
+			end
+		end
 	end
 end
 
@@ -61,7 +75,6 @@ function MM2Page.create(scrollFrame)
 	if ESPSystem then
 		local toggle = Components.createToggle(scrollFrame, yOffset, "Player Info (Name & Role)", function(enabled)
 			if not isPremium then
-				warn("[TMMW] Premium required")
 				return
 			end
 			ESPSystem.setPlayerInfoEnabled(enabled)
@@ -122,11 +135,6 @@ function MM2Page.create(scrollFrame)
 	if GunGrabber then
 		local button = Components.createButton(scrollFrame, yOffset, "Grab Gun Once", "GRAB", function(btn)
 			if not isPremium then
-				btn.Text = "PREMIUM"
-				btn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-				task.wait(1)
-				btn.Text = "GRAB"
-				btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 				return
 			end
 			
