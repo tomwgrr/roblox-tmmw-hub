@@ -2,6 +2,12 @@
 -- MURDER MYSTERY 2 PAGE
 -- ========================================
 
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+
+local player = Players.LocalPlayer
+local PREMIUM_PASS_ID = 9696634781
+
 local Components = getgenv().TMMW.Modules.Components
 local ESPSystem = getgenv().TMMW.Modules.ESPSystem
 local GunGrabber = getgenv().TMMW.Modules.GunGrabber
@@ -9,8 +15,24 @@ local CoinFarmer = getgenv().TMMW.Modules.CoinFarmer
 
 local MM2Page = {}
 
+-- ========================================
+-- PREMIUM VERIFICATION
+-- ========================================
+
+local function hasPremium()
+	local success, result = pcall(function()
+		return MarketplaceService:UserOwnsGamePassAsync(player.UserId, PREMIUM_PASS_ID)
+	end)
+	return success and result
+end
+
+-- ========================================
+-- CREATE PAGE
+-- ========================================
+
 function MM2Page.create(scrollFrame)
 	local yOffset = 10
+	local isPremium = hasPremium()
 	
 	-- ===== VISUAL SECTION =====
 	Components.createSectionTitle(scrollFrame, yOffset, "Visual")
@@ -18,11 +40,23 @@ function MM2Page.create(scrollFrame)
 	Components.createSeparator(scrollFrame, yOffset)
 	yOffset = yOffset + 10
 	
-	-- Player Info Toggle
+	-- Player Info Toggle (PREMIUM)
 	if ESPSystem then
-		Components.createToggle(scrollFrame, yOffset, "Player Info (Name & Role)", function(enabled)
+		local toggle = Components.createToggle(scrollFrame, yOffset, "Player Info (Name & Role)", function(enabled)
+			if not isPremium then
+				warn("[TMMW] Premium required")
+				return
+			end
 			ESPSystem.setPlayerInfoEnabled(enabled)
 		end)
+		
+		if not isPremium then
+			toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle:FindFirstChild("Switch") then
+				toggle.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			end
+		end
+		
 		yOffset = yOffset + 50
 	end
 	
@@ -39,53 +73,91 @@ function MM2Page.create(scrollFrame)
 	classicTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
-	-- ESP Toggles pour Classic Mode
+	-- ESP Toggles pour Classic Mode (PREMIUM)
 	if ESPSystem then
-		Components.createToggle(scrollFrame, yOffset, "Murderer ESP", function(enabled)
+		local toggle1 = Components.createToggle(scrollFrame, yOffset, "Murderer ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Murderer", enabled)
 		end)
+		if not isPremium then
+			toggle1.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle1:FindFirstChild("Switch") then toggle1.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 		
-		Components.createToggle(scrollFrame, yOffset, "Sheriff ESP", function(enabled)
+		local toggle2 = Components.createToggle(scrollFrame, yOffset, "Sheriff ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Sheriff", enabled)
 		end)
+		if not isPremium then
+			toggle2.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle2:FindFirstChild("Switch") then toggle2.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 		
-		Components.createToggle(scrollFrame, yOffset, "Innocent ESP", function(enabled)
+		local toggle3 = Components.createToggle(scrollFrame, yOffset, "Innocent ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Innocent", enabled)
 		end)
+		if not isPremium then
+			toggle3.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle3:FindFirstChild("Switch") then toggle3.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 		
-		Components.createToggle(scrollFrame, yOffset, "Gun (Dropped) ESP", function(enabled)
+		local toggle4 = Components.createToggle(scrollFrame, yOffset, "Gun (Dropped) ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Gun", enabled)
 		end)
+		if not isPremium then
+			toggle4.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle4:FindFirstChild("Switch") then toggle4.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 	end
 	
-	-- Grab Gun Once Button
+	-- Grab Gun Once Button (PREMIUM)
 	if GunGrabber then
-		Components.createButton(scrollFrame, yOffset, "Grab Gun Once", "GRAB", function(button)
+		local button = Components.createButton(scrollFrame, yOffset, "Grab Gun Once", "GRAB", function(btn)
+			if not isPremium then
+				btn.Text = "PREMIUM"
+				btn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+				task.wait(1)
+				btn.Text = "GRAB"
+				btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+				return
+			end
+			
 			local success = GunGrabber.grabOnce()
 			if success then
-				button.Text = "✓ GRABBED"
-				button.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
+				btn.Text = "✓ GRABBED"
+				btn.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
 				task.wait(1)
-				button.Text = "GRAB"
-				button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+				btn.Text = "GRAB"
+				btn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 			else
-				button.Text = "NO GUN"
-				button.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+				btn.Text = "NO GUN"
+				btn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 				task.wait(1)
-				button.Text = "GRAB"
-				button.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+				btn.Text = "GRAB"
+				btn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 			end
 		end)
+		
+		if not isPremium then
+			button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		end
 		yOffset = yOffset + 50
 		
-		-- Auto Grab Gun Toggle
-		Components.createToggle(scrollFrame, yOffset, "Auto Grab Gun", function(enabled)
+		-- Auto Grab Gun Toggle (PREMIUM)
+		local toggle5 = Components.createToggle(scrollFrame, yOffset, "Auto Grab Gun", function(enabled)
+			if not isPremium then return end
 			GunGrabber.setAutoGrab(enabled)
 		end)
+		if not isPremium then
+			toggle5.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle5:FindFirstChild("Switch") then toggle5.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 	end
 	
@@ -103,14 +175,24 @@ function MM2Page.create(scrollFrame)
 	yOffset = yOffset + 30
 	
 	if ESPSystem then
-		Components.createToggle(scrollFrame, yOffset, "Zombie ESP", function(enabled)
+		local toggle6 = Components.createToggle(scrollFrame, yOffset, "Zombie ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Zombie", enabled)
 		end)
+		if not isPremium then
+			toggle6.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle6:FindFirstChild("Switch") then toggle6.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 		
-		Components.createToggle(scrollFrame, yOffset, "Survivor ESP", function(enabled)
+		local toggle7 = Components.createToggle(scrollFrame, yOffset, "Survivor ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Survivor", enabled)
 		end)
+		if not isPremium then
+			toggle7.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle7:FindFirstChild("Switch") then toggle7.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 	end
 	
@@ -128,14 +210,24 @@ function MM2Page.create(scrollFrame)
 	yOffset = yOffset + 30
 	
 	if ESPSystem then
-		Components.createToggle(scrollFrame, yOffset, "Freezer ESP", function(enabled)
+		local toggle8 = Components.createToggle(scrollFrame, yOffset, "Freezer ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Freezer", enabled)
 		end)
+		if not isPremium then
+			toggle8.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle8:FindFirstChild("Switch") then toggle8.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 		
-		Components.createToggle(scrollFrame, yOffset, "Runner ESP", function(enabled)
+		local toggle9 = Components.createToggle(scrollFrame, yOffset, "Runner ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Runner", enabled)
 		end)
+		if not isPremium then
+			toggle9.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle9:FindFirstChild("Switch") then toggle9.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 	end
 	
@@ -153,9 +245,14 @@ function MM2Page.create(scrollFrame)
 	yOffset = yOffset + 30
 	
 	if ESPSystem then
-		Components.createToggle(scrollFrame, yOffset, "Assassin ESP", function(enabled)
+		local toggle10 = Components.createToggle(scrollFrame, yOffset, "Assassin ESP", function(enabled)
+			if not isPremium then return end
 			ESPSystem.toggleESP("Assassin", enabled)
 		end)
+		if not isPremium then
+			toggle10.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle10:FindFirstChild("Switch") then toggle10.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 	end
 	
@@ -173,9 +270,14 @@ function MM2Page.create(scrollFrame)
 	yOffset = yOffset + 30
 	
 	if CoinFarmer then
-		Components.createToggle(scrollFrame, yOffset, "Auto Farm Coins", function(enabled)
+		local toggle11 = Components.createToggle(scrollFrame, yOffset, "Auto Farm Coins", function(enabled)
+			if not isPremium then return end
 			CoinFarmer.setAutoFarm(enabled)
 		end)
+		if not isPremium then
+			toggle11.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			if toggle11:FindFirstChild("Switch") then toggle11.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
+		end
 		yOffset = yOffset + 50
 	end
 	
