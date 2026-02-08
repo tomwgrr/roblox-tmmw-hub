@@ -5,15 +5,12 @@
 local Sidebar = {}
 
 local categories = {
-	{name = "Home", icon = "🏠"},
-	{name = "MM2", icon = "🔪"},
-	{name = "Universal", icon = "🌐"},
-	{name = "Scripts", icon = "📜"},
-	{name = "Premium", icon = "⭐"},
-	{name = "Settings", icon = "⚙️"},
-	{name = "Chat", icon = "💬"},
-	{name = "Audios", icon = "🔊"},
-	{name = "Trade Bot", icon = "🤖"}
+	{name = "Home", icon = ""},
+	{name = "MM2", icon = ""},
+	{name = "Universal", icon = ""},
+	{name = "Scripts", icon = ""},
+	{name = "Premium", icon = ""},
+	{name = "Settings", icon = ""}
 }
 
 function Sidebar.create(mainFrame)
