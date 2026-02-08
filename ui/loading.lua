@@ -10,11 +10,12 @@ function LoadingScreen.show(playerGui)
 	loadingGui.ResetOnSpawn = false
 	loadingGui.Parent = playerGui
 	
-	-- Fond avec gradient animé
+	-- Fond quasi transparent avec gradient animé
 	local background = Instance.new("Frame")
 	background.Parent = loadingGui
 	background.Size = UDim2.new(1, 0, 1, 0)
 	background.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	background.BackgroundTransparency = 0.95
 	background.BorderSizePixel = 0
 	
 	local bgGradient = Instance.new("UIGradient")
@@ -25,6 +26,7 @@ function LoadingScreen.show(playerGui)
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 20))
 	}
 	bgGradient.Rotation = 45
+	bgGradient.Transparency = NumberSequence.new(0.95)
 	
 	-- Animation du gradient de fond
 	spawn(function()
@@ -37,19 +39,28 @@ function LoadingScreen.show(playerGui)
 		end
 	end)
 	
-	-- Particules d'arrière-plan
+	-- Particules d'arrière-plan avec spawn fade in
 	for i = 1, 15 do
 		local particle = Instance.new("Frame")
 		particle.Parent = background
 		particle.Size = UDim2.new(0, math.random(2, 6), 0, math.random(2, 6))
 		particle.Position = UDim2.new(math.random(0, 100) / 100, 0, math.random(0, 100) / 100, 0)
 		particle.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-		particle.BackgroundTransparency = math.random(50, 80) / 100
+		particle.BackgroundTransparency = 1
 		particle.BorderSizePixel = 0
 		
 		local particleCorner = Instance.new("UICorner")
 		particleCorner.CornerRadius = UDim.new(1, 0)
 		particleCorner.Parent = particle
+		
+		-- Fade in des particules
+		spawn(function()
+			task.wait(i * 0.05)
+			local fadeIn = TweenService:Create(particle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = math.random(50, 80) / 100
+			})
+			fadeIn:Play()
+		end)
 		
 		-- Animation flottante
 		spawn(function()
@@ -67,79 +78,16 @@ function LoadingScreen.show(playerGui)
 	-- Container central
 	local centerContainer = Instance.new("Frame")
 	centerContainer.Parent = loadingGui
-	centerContainer.Size = UDim2.new(0, 500, 0, 300)
+	centerContainer.Size = UDim2.new(0, 500, 0, 200)
 	centerContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
 	centerContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 	centerContainer.BackgroundTransparency = 1
-	
-	-- Logo/Icône avec glow
-	local logoContainer = Instance.new("Frame")
-	logoContainer.Parent = centerContainer
-	logoContainer.Size = UDim2.new(0, 120, 0, 120)
-	logoContainer.Position = UDim2.new(0.5, 0, 0, 0)
-	logoContainer.AnchorPoint = Vector2.new(0.5, 0)
-	logoContainer.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-	logoContainer.BorderSizePixel = 0
-	
-	local logoCorner = Instance.new("UICorner")
-	logoCorner.CornerRadius = UDim.new(0, 20)
-	logoCorner.Parent = logoContainer
-	
-	-- Glow autour du logo
-	local logoGlow = Instance.new("ImageLabel")
-	logoGlow.Parent = logoContainer
-	logoGlow.Size = UDim2.new(1, 40, 1, 40)
-	logoGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	logoGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-	logoGlow.BackgroundTransparency = 1
-	logoGlow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-	logoGlow.ImageColor3 = Color3.fromRGB(138, 43, 226)
-	logoGlow.ImageTransparency = 0.3
-	logoGlow.ScaleType = Enum.ScaleType.Slice
-	logoGlow.SliceCenter = Rect.new(10, 10, 118, 118)
-	logoGlow.ZIndex = 0
-	
-	-- Animation de pulsation du glow
-	local glowTween = TweenService:Create(logoGlow, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-		ImageTransparency = 0.7,
-		Size = UDim2.new(1, 60, 1, 60)
-	})
-	glowTween:Play()
-	
-	-- Texte du logo
-	local logoText = Instance.new("TextLabel")
-	logoText.Parent = logoContainer
-	logoText.Size = UDim2.new(1, 0, 1, 0)
-	logoText.BackgroundTransparency = 1
-	logoText.Text = "TM"
-	logoText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	logoText.Font = Enum.Font.GothamBlack
-	logoText.TextScaled = true
-	logoText.ZIndex = 2
-	
-	local logoPadding = Instance.new("UIPadding")
-	logoPadding.PaddingLeft = UDim.new(0, 20)
-	logoPadding.PaddingRight = UDim.new(0, 20)
-	logoPadding.PaddingTop = UDim.new(0, 20)
-	logoPadding.PaddingBottom = UDim.new(0, 20)
-	logoPadding.Parent = logoText
-	
-	-- Animation de rotation du logo
-	spawn(function()
-		while logoContainer.Parent do
-			local rotateTween = TweenService:Create(logoContainer, TweenInfo.new(3, Enum.EasingStyle.Linear), {
-				Rotation = logoContainer.Rotation + 360
-			})
-			rotateTween:Play()
-			rotateTween.Completed:Wait()
-		end
-	end)
 	
 	-- Titre principal
 	local title = Instance.new("TextLabel")
 	title.Parent = centerContainer
 	title.Size = UDim2.new(1, 0, 0, 80)
-	title.Position = UDim2.new(0.5, 0, 0, 140)
+	title.Position = UDim2.new(0.5, 0, 0, 0)
 	title.AnchorPoint = Vector2.new(0.5, 0)
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -177,7 +125,7 @@ function LoadingScreen.show(playerGui)
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Parent = centerContainer
 	subtitle.Size = UDim2.new(1, 0, 0, 30)
-	subtitle.Position = UDim2.new(0.5, 0, 0, 230)
+	subtitle.Position = UDim2.new(0.5, 0, 0, 90)
 	subtitle.AnchorPoint = Vector2.new(0.5, 0)
 	subtitle.BackgroundTransparency = 1
 	subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
@@ -190,9 +138,10 @@ function LoadingScreen.show(playerGui)
 	local progressBarBg = Instance.new("Frame")
 	progressBarBg.Parent = centerContainer
 	progressBarBg.Size = UDim2.new(0.8, 0, 0, 6)
-	progressBarBg.Position = UDim2.new(0.5, 0, 1, -20)
+	progressBarBg.Position = UDim2.new(0.5, 0, 1, -50)
 	progressBarBg.AnchorPoint = Vector2.new(0.5, 0)
 	progressBarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	progressBarBg.BackgroundTransparency = 1
 	progressBarBg.BorderSizePixel = 0
 	
 	local progressBarCorner = Instance.new("UICorner")
@@ -203,6 +152,7 @@ function LoadingScreen.show(playerGui)
 	progressBar.Parent = progressBarBg
 	progressBar.Size = UDim2.new(0, 0, 1, 0)
 	progressBar.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+	progressBar.BackgroundTransparency = 1
 	progressBar.BorderSizePixel = 0
 	
 	local progressCorner = Instance.new("UICorner")
@@ -233,7 +183,7 @@ function LoadingScreen.show(playerGui)
 	local percentText = Instance.new("TextLabel")
 	percentText.Parent = centerContainer
 	percentText.Size = UDim2.new(0, 100, 0, 25)
-	percentText.Position = UDim2.new(0.5, 0, 1, 0)
+	percentText.Position = UDim2.new(0.5, 0, 1, -20)
 	percentText.AnchorPoint = Vector2.new(0.5, 0)
 	percentText.BackgroundTransparency = 1
 	percentText.TextColor3 = Color3.fromRGB(138, 43, 226)
@@ -242,8 +192,14 @@ function LoadingScreen.show(playerGui)
 	percentText.Text = "0%"
 	percentText.TextTransparency = 1
 	
-	-- ANIMATIONS D'ENTRÉE
+	-- ANIMATIONS D'ENTRÉE (FADE IN)
 	task.wait(0.2)
+	
+	-- Fade in du fond
+	local bgFadeIn = TweenService:Create(background, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0.95
+	})
+	bgFadeIn:Play()
 	
 	-- Fade in du titre
 	local titleFadeIn = TweenService:Create(title, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -268,6 +224,17 @@ function LoadingScreen.show(playerGui)
 	
 	subtitle.Text = "Advanced Script Hub"
 	
+	-- Fade in de la barre de progression
+	local progressBgFadeIn = TweenService:Create(progressBarBg, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0.3
+	})
+	progressBgFadeIn:Play()
+	
+	local progressBarFadeIn = TweenService:Create(progressBar, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 0
+	})
+	progressBarFadeIn:Play()
+	
 	-- Fade in du pourcentage
 	local percentFadeIn = TweenService:Create(percentText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		TextTransparency = 0
@@ -288,16 +255,14 @@ function LoadingScreen.show(playerGui)
 	
 	task.wait(0.3)
 	
-	-- ANIMATIONS DE SORTIE
-	local fadeInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- ANIMATIONS DE SORTIE (FADE OUT)
+	local fadeInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	
 	local fadeTitle = TweenService:Create(title, fadeInfo, {TextTransparency = 1})
 	local fadeSubtitle = TweenService:Create(subtitle, fadeInfo, {TextTransparency = 1})
 	local fadePercent = TweenService:Create(percentText, fadeInfo, {TextTransparency = 1})
 	local fadeProgressBg = TweenService:Create(progressBarBg, fadeInfo, {BackgroundTransparency = 1})
 	local fadeProgressBar = TweenService:Create(progressBar, fadeInfo, {BackgroundTransparency = 1})
-	local fadeLogo = TweenService:Create(logoContainer, fadeInfo, {BackgroundTransparency = 1})
-	local fadeLogoText = TweenService:Create(logoText, fadeInfo, {TextTransparency = 1})
 	local fadeBackground = TweenService:Create(background, fadeInfo, {BackgroundTransparency = 1})
 	
 	fadeTitle:Play()
@@ -305,10 +270,16 @@ function LoadingScreen.show(playerGui)
 	fadePercent:Play()
 	fadeProgressBg:Play()
 	fadeProgressBar:Play()
-	fadeLogo:Play()
-	fadeLogoText:Play()
-	fadeBackground:Play()
 	
+	-- Fade out des particules
+	for _, child in pairs(background:GetChildren()) do
+		if child:IsA("Frame") and child ~= progressBarBg then
+			local particleFade = TweenService:Create(child, fadeInfo, {BackgroundTransparency = 1})
+			particleFade:Play()
+		end
+	end
+	
+	fadeBackground:Play()
 	fadeBackground.Completed:Wait()
 	
 	loadingGui:Destroy()
