@@ -159,20 +159,23 @@ function MM2Page.create(scrollFrame)
 		yOffset = yOffset + 50
 	end
 	
-	-- ===== COMBAT (SHERIFF) =====
+	-- ===== COMBAT SECTION =====
+	Components.createSectionTitle(scrollFrame, yOffset, "Combat")
+	yOffset = yOffset + 35
 	Components.createSeparator(scrollFrame, yOffset)
 	yOffset = yOffset + 10
 	
-	local combatSheriffTitle = Instance.new("TextLabel")
-	combatSheriffTitle.Parent = scrollFrame
-	combatSheriffTitle.Size = UDim2.new(1, -20, 0, 25)
-	combatSheriffTitle.Position = UDim2.new(0, 10, 0, yOffset)
-	combatSheriffTitle.BackgroundTransparency = 1
-	combatSheriffTitle.Text = "Combat (Sheriff)"
-	combatSheriffTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
-	combatSheriffTitle.Font = Enum.Font.GothamBold
-	combatSheriffTitle.TextSize = 15
-	combatSheriffTitle.TextXAlignment = Enum.TextXAlignment.Left
+	-- ===== SHERIFF =====
+	local sheriffTitle = Instance.new("TextLabel")
+	sheriffTitle.Parent = scrollFrame
+	sheriffTitle.Size = UDim2.new(1, -20, 0, 25)
+	sheriffTitle.Position = UDim2.new(0, 10, 0, yOffset)
+	sheriffTitle.BackgroundTransparency = 1
+	sheriffTitle.Text = "Sheriff"
+	sheriffTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+	sheriffTitle.Font = Enum.Font.GothamBold
+	sheriffTitle.TextSize = 14
+	sheriffTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
 	Components.createToggle(scrollFrame, yOffset, "Silent Aim", function(enabled)
@@ -190,20 +193,17 @@ function MM2Page.create(scrollFrame)
 	end)
 	yOffset = yOffset + 50
 	
-	-- ===== COMBAT (MURDERER) =====
-	Components.createSeparator(scrollFrame, yOffset)
-	yOffset = yOffset + 10
-	
-	local combatMurdererTitle = Instance.new("TextLabel")
-	combatMurdererTitle.Parent = scrollFrame
-	combatMurdererTitle.Size = UDim2.new(1, -20, 0, 25)
-	combatMurdererTitle.Position = UDim2.new(0, 10, 0, yOffset)
-	combatMurdererTitle.BackgroundTransparency = 1
-	combatMurdererTitle.Text = "Combat (Murderer)"
-	combatMurdererTitle.TextColor3 = Color3.fromRGB(255, 50, 50)
-	combatMurdererTitle.Font = Enum.Font.GothamBold
-	combatMurdererTitle.TextSize = 15
-	combatMurdererTitle.TextXAlignment = Enum.TextXAlignment.Left
+	-- ===== MURDERER =====
+	local murdererTitle = Instance.new("TextLabel")
+	murdererTitle.Parent = scrollFrame
+	murdererTitle.Size = UDim2.new(1, -20, 0, 25)
+	murdererTitle.Position = UDim2.new(0, 10, 0, yOffset)
+	murdererTitle.BackgroundTransparency = 1
+	murdererTitle.Text = "Murderer"
+	murdererTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+	murdererTitle.Font = Enum.Font.GothamBold
+	murdererTitle.TextSize = 14
+	murdererTitle.TextXAlignment = Enum.TextXAlignment.Left
 	yOffset = yOffset + 30
 	
 	Components.createToggle(scrollFrame, yOffset, "Kill Aura", function(enabled)
@@ -369,20 +369,10 @@ function MM2Page.create(scrollFrame)
 	yOffset = yOffset + 110
 	
 	-- ===== MISCELLANEOUS =====
+	Components.createSectionTitle(scrollFrame, yOffset, "Miscellaneous")
+	yOffset = yOffset + 35
 	Components.createSeparator(scrollFrame, yOffset)
 	yOffset = yOffset + 10
-	
-	local miscTitle = Instance.new("TextLabel")
-	miscTitle.Parent = scrollFrame
-	miscTitle.Size = UDim2.new(1, -20, 0, 25)
-	miscTitle.Position = UDim2.new(0, 10, 0, yOffset)
-	miscTitle.BackgroundTransparency = 1
-	miscTitle.Text = "Miscellaneous"
-	miscTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-	miscTitle.Font = Enum.Font.GothamBold
-	miscTitle.TextSize = 14
-	miscTitle.TextXAlignment = Enum.TextXAlignment.Left
-	yOffset = yOffset + 30
 	
 	if CoinFarmer then
 		Components.createToggle(scrollFrame, yOffset, "Auto Farm Coins", function(enabled)
