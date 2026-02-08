@@ -26,6 +26,23 @@ local function hasPremium()
 	return success and result
 end
 
+local function disableToggle(toggle)
+	if toggle and typeof(toggle) == "Instance" then
+		toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		for _, child in pairs(toggle:GetChildren()) do
+			if child.Name == "Switch" then
+				child.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			end
+		end
+	end
+end
+
+local function disableButton(button)
+	if button and typeof(button) == "Instance" then
+		button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	end
+end
+
 -- ========================================
 -- CREATE PAGE
 -- ========================================
@@ -51,10 +68,7 @@ function MM2Page.create(scrollFrame)
 		end)
 		
 		if not isPremium then
-			toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle:FindFirstChild("Switch") then
-				toggle.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-			end
+			disableToggle(toggle)
 		end
 		
 		yOffset = yOffset + 50
@@ -79,40 +93,28 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Murderer", enabled)
 		end)
-		if not isPremium then
-			toggle1.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle1:FindFirstChild("Switch") then toggle1.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle1) end
 		yOffset = yOffset + 50
 		
 		local toggle2 = Components.createToggle(scrollFrame, yOffset, "Sheriff ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Sheriff", enabled)
 		end)
-		if not isPremium then
-			toggle2.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle2:FindFirstChild("Switch") then toggle2.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle2) end
 		yOffset = yOffset + 50
 		
 		local toggle3 = Components.createToggle(scrollFrame, yOffset, "Innocent ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Innocent", enabled)
 		end)
-		if not isPremium then
-			toggle3.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle3:FindFirstChild("Switch") then toggle3.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle3) end
 		yOffset = yOffset + 50
 		
 		local toggle4 = Components.createToggle(scrollFrame, yOffset, "Gun (Dropped) ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Gun", enabled)
 		end)
-		if not isPremium then
-			toggle4.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle4:FindFirstChild("Switch") then toggle4.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle4) end
 		yOffset = yOffset + 50
 	end
 	
@@ -144,9 +146,7 @@ function MM2Page.create(scrollFrame)
 			end
 		end)
 		
-		if not isPremium then
-			button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		end
+		if not isPremium then disableButton(button) end
 		yOffset = yOffset + 50
 		
 		-- Auto Grab Gun Toggle (PREMIUM)
@@ -154,10 +154,7 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			GunGrabber.setAutoGrab(enabled)
 		end)
-		if not isPremium then
-			toggle5.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle5:FindFirstChild("Switch") then toggle5.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle5) end
 		yOffset = yOffset + 50
 	end
 	
@@ -179,20 +176,14 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Zombie", enabled)
 		end)
-		if not isPremium then
-			toggle6.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle6:FindFirstChild("Switch") then toggle6.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle6) end
 		yOffset = yOffset + 50
 		
 		local toggle7 = Components.createToggle(scrollFrame, yOffset, "Survivor ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Survivor", enabled)
 		end)
-		if not isPremium then
-			toggle7.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle7:FindFirstChild("Switch") then toggle7.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle7) end
 		yOffset = yOffset + 50
 	end
 	
@@ -214,20 +205,14 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Freezer", enabled)
 		end)
-		if not isPremium then
-			toggle8.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle8:FindFirstChild("Switch") then toggle8.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle8) end
 		yOffset = yOffset + 50
 		
 		local toggle9 = Components.createToggle(scrollFrame, yOffset, "Runner ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Runner", enabled)
 		end)
-		if not isPremium then
-			toggle9.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle9:FindFirstChild("Switch") then toggle9.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle9) end
 		yOffset = yOffset + 50
 	end
 	
@@ -249,10 +234,7 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Assassin", enabled)
 		end)
-		if not isPremium then
-			toggle10.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle10:FindFirstChild("Switch") then toggle10.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle10) end
 		yOffset = yOffset + 50
 	end
 	
@@ -274,10 +256,7 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			CoinFarmer.setAutoFarm(enabled)
 		end)
-		if not isPremium then
-			toggle11.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			if toggle11:FindFirstChild("Switch") then toggle11.Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end
-		end
+		if not isPremium then disableToggle(toggle11) end
 		yOffset = yOffset + 50
 	end
 	
