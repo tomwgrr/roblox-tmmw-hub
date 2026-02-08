@@ -133,4 +133,8 @@ function CoinFarmer.hasPremium()
 	return hasPremium()
 end
 
+function CoinFarmer.initialize()
+	print("[TMMW] CoinFarmer initialized")
+end
+
 return CoinFarmer
