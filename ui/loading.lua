@@ -10,39 +10,16 @@ function LoadingScreen.show(playerGui)
 	loadingGui.ResetOnSpawn = false
 	loadingGui.Parent = playerGui
 	
-	-- Fond quasi transparent avec gradient animé
-	local background = Instance.new("Frame")
-	background.Parent = loadingGui
-	background.Size = UDim2.new(1, 0, 1, 0)
-	background.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
-	background.BackgroundTransparency = 0.95
-	background.BorderSizePixel = 0
+	-- Particules flottantes
+	local particlesContainer = Instance.new("Frame")
+	particlesContainer.Parent = loadingGui
+	particlesContainer.Size = UDim2.new(1, 0, 1, 0)
+	particlesContainer.BackgroundTransparency = 1
+	particlesContainer.BorderSizePixel = 0
 	
-	local bgGradient = Instance.new("UIGradient")
-	bgGradient.Parent = background
-	bgGradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 30)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(30, 10, 50)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 20))
-	}
-	bgGradient.Rotation = 45
-	bgGradient.Transparency = NumberSequence.new(0.95)
-	
-	-- Animation du gradient de fond
-	spawn(function()
-		while loadingGui.Parent do
-			local tween = TweenService:Create(bgGradient, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-				Rotation = bgGradient.Rotation + 360
-			})
-			tween:Play()
-			tween.Completed:Wait()
-		end
-	end)
-	
-	-- Particules d'arrière-plan avec spawn fade in
 	for i = 1, 15 do
 		local particle = Instance.new("Frame")
-		particle.Parent = background
+		particle.Parent = particlesContainer
 		particle.Size = UDim2.new(0, math.random(2, 6), 0, math.random(2, 6))
 		particle.Position = UDim2.new(math.random(0, 100) / 100, 0, math.random(0, 100) / 100, 0)
 		particle.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
@@ -195,12 +172,6 @@ function LoadingScreen.show(playerGui)
 	-- ANIMATIONS D'ENTRÉE (FADE IN)
 	task.wait(0.2)
 	
-	-- Fade in du fond
-	local bgFadeIn = TweenService:Create(background, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0.95
-	})
-	bgFadeIn:Play()
-	
 	-- Fade in du titre
 	local titleFadeIn = TweenService:Create(title, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		TextTransparency = 0
@@ -263,7 +234,6 @@ function LoadingScreen.show(playerGui)
 	local fadePercent = TweenService:Create(percentText, fadeInfo, {TextTransparency = 1})
 	local fadeProgressBg = TweenService:Create(progressBarBg, fadeInfo, {BackgroundTransparency = 1})
 	local fadeProgressBar = TweenService:Create(progressBar, fadeInfo, {BackgroundTransparency = 1})
-	local fadeBackground = TweenService:Create(background, fadeInfo, {BackgroundTransparency = 1})
 	
 	fadeTitle:Play()
 	fadeSubtitle:Play()
@@ -272,15 +242,14 @@ function LoadingScreen.show(playerGui)
 	fadeProgressBar:Play()
 	
 	-- Fade out des particules
-	for _, child in pairs(background:GetChildren()) do
-		if child:IsA("Frame") and child ~= progressBarBg then
+	for _, child in pairs(particlesContainer:GetChildren()) do
+		if child:IsA("Frame") then
 			local particleFade = TweenService:Create(child, fadeInfo, {BackgroundTransparency = 1})
 			particleFade:Play()
 		end
 	end
 	
-	fadeBackground:Play()
-	fadeBackground.Completed:Wait()
+	fadeTitle.Completed:Wait()
 	
 	loadingGui:Destroy()
 end
