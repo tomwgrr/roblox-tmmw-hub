@@ -26,33 +26,42 @@ local function hasPremium()
 	return success and result
 end
 
-local function disableToggle(toggle)
-	if toggle and typeof(toggle) == "Instance" then
-		toggle.BackgroundTransparency = 0.7
-		toggle.Active = false
+local function disableToggleComponent(toggleData)
+	if toggleData and toggleData.container then
+		-- Rend le container transparent
+		toggleData.container.BackgroundTransparency = 0.8
 		
-		for _, child in pairs(toggle:GetChildren()) do
-			if child:IsA("TextLabel") then
-				child.TextTransparency = 0.6
-				child.TextStrokeTransparency = 1
-			end
-			if child.Name == "Switch" then
-				child.BackgroundTransparency = 0.7
-				child.Active = false
-			end
+		-- Rend le label transparent
+		if toggleData.label then
+			toggleData.label.TextTransparency = 0.7
+		end
+		
+		-- Désactive et rend le toggle transparent
+		if toggleData.toggle then
+			toggleData.toggle.BackgroundTransparency = 0.7
+			toggleData.toggle.TextTransparency = 0.7
+			toggleData.toggle.Active = false
+			toggleData.toggle.AutoButtonColor = false
 		end
 	end
 end
 
-local function disableButton(button)
-	if button and typeof(button) == "Instance" then
-		button.BackgroundTransparency = 0.7
-		button.Active = false
+local function disableButtonComponent(buttonData)
+	if buttonData and buttonData.container then
+		-- Rend le container transparent
+		buttonData.container.BackgroundTransparency = 0.8
 		
-		for _, child in pairs(button:GetChildren()) do
-			if child:IsA("TextLabel") then
-				child.TextTransparency = 0.6
-			end
+		-- Rend le label transparent
+		if buttonData.label then
+			buttonData.label.TextTransparency = 0.7
+		end
+		
+		-- Désactive et rend le bouton transparent
+		if buttonData.button then
+			buttonData.button.BackgroundTransparency = 0.7
+			buttonData.button.TextTransparency = 0.7
+			buttonData.button.Active = false
+			buttonData.button.AutoButtonColor = false
 		end
 	end
 end
@@ -73,7 +82,7 @@ function MM2Page.create(scrollFrame)
 	
 	-- Player Info Toggle (PREMIUM)
 	if ESPSystem then
-		local toggle = Components.createToggle(scrollFrame, yOffset, "Player Info (Name & Role)", function(enabled)
+		local toggleData = Components.createToggle(scrollFrame, yOffset, "Player Info (Name & Role)", function(enabled)
 			if not isPremium then
 				return
 			end
@@ -81,7 +90,7 @@ function MM2Page.create(scrollFrame)
 		end)
 		
 		if not isPremium then
-			disableToggle(toggle)
+			disableToggleComponent(toggleData)
 		end
 		
 		yOffset = yOffset + 50
@@ -106,34 +115,34 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Murderer", enabled)
 		end)
-		if not isPremium then disableToggle(toggle1) end
+		if not isPremium then disableToggleComponent(toggle1) end
 		yOffset = yOffset + 50
 		
 		local toggle2 = Components.createToggle(scrollFrame, yOffset, "Sheriff ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Sheriff", enabled)
 		end)
-		if not isPremium then disableToggle(toggle2) end
+		if not isPremium then disableToggleComponent(toggle2) end
 		yOffset = yOffset + 50
 		
 		local toggle3 = Components.createToggle(scrollFrame, yOffset, "Innocent ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Innocent", enabled)
 		end)
-		if not isPremium then disableToggle(toggle3) end
+		if not isPremium then disableToggleComponent(toggle3) end
 		yOffset = yOffset + 50
 		
 		local toggle4 = Components.createToggle(scrollFrame, yOffset, "Gun (Dropped) ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Gun", enabled)
 		end)
-		if not isPremium then disableToggle(toggle4) end
+		if not isPremium then disableToggleComponent(toggle4) end
 		yOffset = yOffset + 50
 	end
 	
 	-- Grab Gun Once Button (PREMIUM)
 	if GunGrabber then
-		local button = Components.createButton(scrollFrame, yOffset, "Grab Gun Once", "GRAB", function(btn)
+		local buttonData = Components.createButton(scrollFrame, yOffset, "Grab Gun Once", "GRAB", function(btn)
 			if not isPremium then
 				return
 			end
@@ -154,7 +163,7 @@ function MM2Page.create(scrollFrame)
 			end
 		end)
 		
-		if not isPremium then disableButton(button) end
+		if not isPremium then disableButtonComponent(buttonData) end
 		yOffset = yOffset + 50
 		
 		-- Auto Grab Gun Toggle (PREMIUM)
@@ -162,7 +171,7 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			GunGrabber.setAutoGrab(enabled)
 		end)
-		if not isPremium then disableToggle(toggle5) end
+		if not isPremium then disableToggleComponent(toggle5) end
 		yOffset = yOffset + 50
 	end
 	
@@ -184,14 +193,14 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Zombie", enabled)
 		end)
-		if not isPremium then disableToggle(toggle6) end
+		if not isPremium then disableToggleComponent(toggle6) end
 		yOffset = yOffset + 50
 		
 		local toggle7 = Components.createToggle(scrollFrame, yOffset, "Survivor ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Survivor", enabled)
 		end)
-		if not isPremium then disableToggle(toggle7) end
+		if not isPremium then disableToggleComponent(toggle7) end
 		yOffset = yOffset + 50
 	end
 	
@@ -213,14 +222,14 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Freezer", enabled)
 		end)
-		if not isPremium then disableToggle(toggle8) end
+		if not isPremium then disableToggleComponent(toggle8) end
 		yOffset = yOffset + 50
 		
 		local toggle9 = Components.createToggle(scrollFrame, yOffset, "Runner ESP", function(enabled)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Runner", enabled)
 		end)
-		if not isPremium then disableToggle(toggle9) end
+		if not isPremium then disableToggleComponent(toggle9) end
 		yOffset = yOffset + 50
 	end
 	
@@ -242,7 +251,7 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			ESPSystem.toggleESP("Assassin", enabled)
 		end)
-		if not isPremium then disableToggle(toggle10) end
+		if not isPremium then disableToggleComponent(toggle10) end
 		yOffset = yOffset + 50
 	end
 	
@@ -264,7 +273,7 @@ function MM2Page.create(scrollFrame)
 			if not isPremium then return end
 			CoinFarmer.setAutoFarm(enabled)
 		end)
-		if not isPremium then disableToggle(toggle11) end
+		if not isPremium then disableToggleComponent(toggle11) end
 		yOffset = yOffset + 50
 	end
 	
