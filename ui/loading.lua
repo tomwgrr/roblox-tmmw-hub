@@ -31,25 +31,35 @@ function LoadingScreen.show(playerGui)
     gui.Parent = playerGui
 
     -- =====================
-    -- SOUNDS
+    -- SOUNDS (OPTIONAL - Protected)
     -- =====================
-    local whoosh = Instance.new("Sound")
-    whoosh.SoundId = "rbxassetid://9118823101"
-    whoosh.Volume = 0.6
-    whoosh.Parent = SoundService
+    local whoosh = nil
+    local doneSound = nil
+    
+    pcall(function()
+        whoosh = Instance.new("Sound")
+        whoosh.SoundId = "rbxassetid://9118823101"
+        whoosh.Volume = 0.6
+        whoosh.Parent = SoundService
+    end)
 
-    local doneSound = Instance.new("Sound")
-    doneSound.SoundId = "rbxassetid://9118828562"
-    doneSound.Volume = 0.5
-    doneSound.Parent = SoundService
+    pcall(function()
+        doneSound = Instance.new("Sound")
+        doneSound.SoundId = "rbxassetid://9118828562"
+        doneSound.Volume = 0.5
+        doneSound.Parent = SoundService
+    end)
 
     -- =====================
     -- BLUR
     -- =====================
-    local blur = Instance.new("BlurEffect")
-    blur.Size = 0
-    blur.Parent = Lighting
-    tween(blur, TweenInfo.new(0.8), { Size = 18 })
+    local blur = nil
+    pcall(function()
+        blur = Instance.new("BlurEffect")
+        blur.Size = 0
+        blur.Parent = Lighting
+        tween(blur, TweenInfo.new(0.8), { Size = 18 })
+    end)
 
     -- =====================
     -- NEON PARTICLES
@@ -139,7 +149,13 @@ function LoadingScreen.show(playerGui)
     title.TextTransparency = 1
     title.Parent = mask
 
-    whoosh:Play()
+    -- Play whoosh sound if available
+    pcall(function()
+        if whoosh then
+            whoosh:Play()
+        end
+    end)
+    
     tween(mask, TweenInfo.new(1.1, Enum.EasingStyle.Quint), { Size = UDim2.new(1, 0, 0, 70) })
     tween(title, TweenInfo.new(0.8), { TextTransparency = 0 })
 
@@ -205,8 +221,11 @@ function LoadingScreen.show(playerGui)
 
         print("[LoadingScreen] Fermeture en cours...")
         
+        -- Play done sound if available
         pcall(function()
-            doneSound:Play()
+            if doneSound then
+                doneSound:Play()
+            end
         end)
         
         subtitle.Text = "Ready"
@@ -224,22 +243,34 @@ function LoadingScreen.show(playerGui)
             end)
         end
 
-        tween(blur, TweenInfo.new(0.6), { Size = 0 })
+        if blur then
+            tween(blur, TweenInfo.new(0.6), { Size = 0 })
+        end
+        
         task.wait(0.7)
 
         -- Cleanup
         pcall(function()
             gui:Destroy()
         end)
-        pcall(function()
-            blur:Destroy()
-        end)
-        pcall(function()
-            whoosh:Destroy()
-        end)
-        pcall(function()
-            doneSound:Destroy()
-        end)
+        
+        if blur then
+            pcall(function()
+                blur:Destroy()
+            end)
+        end
+        
+        if whoosh then
+            pcall(function()
+                whoosh:Destroy()
+            end)
+        end
+        
+        if doneSound then
+            pcall(function()
+                doneSound:Destroy()
+            end)
+        end
         
         print("[LoadingScreen] ✓ Fermé complètement")
     end
