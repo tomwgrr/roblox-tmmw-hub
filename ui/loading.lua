@@ -1,11 +1,13 @@
--- File: LoadingScreen.lua
--- Cinematic Ultra Loading Screen (Left → Right Title Reveal)
+-- File: ui/loading.lua
+-- Cinematic Neon Loading Screen with Sound (Main Controlled)
 
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local SoundService = game:GetService("SoundService")
 
 local LoadingScreen = {}
 
-local THEME_COLOR = Color3.fromRGB(138, 43, 226)
+local THEME_COLOR = Color3.fromRGB(170, 80, 255)
 
 local function tween(obj, info, props)
 	local t = TweenService:Create(obj, info, props)
@@ -15,7 +17,7 @@ end
 
 function LoadingScreen.show(playerGui)
 	-- =====================
-	-- SCREEN GUI
+	-- GUI
 	-- =====================
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "TMMWHubLoading"
@@ -24,32 +26,56 @@ function LoadingScreen.show(playerGui)
 	gui.Parent = playerGui
 
 	-- =====================
-	-- PARTICLES BACKGROUND
+	-- SOUNDS
+	-- =====================
+	local whoosh = Instance.new("Sound")
+	whoosh.SoundId = "rbxassetid://9118823101"
+	whoosh.Volume = 0.6
+	whoosh.Parent = SoundService
+
+	local doneSound = Instance.new("Sound")
+	doneSound.SoundId = "rbxassetid://9118828562"
+	doneSound.Volume = 0.5
+	doneSound.Parent = SoundService
+
+	-- =====================
+	-- BLUR
+	-- =====================
+	local blur = Instance.new("BlurEffect")
+	blur.Size = 0
+	blur.Parent = Lighting
+	tween(blur, TweenInfo.new(0.8), {Size = 18})
+
+	-- =====================
+	-- NEON PARTICLES
 	-- =====================
 	local particles = Instance.new("Frame")
 	particles.Size = UDim2.fromScale(1, 1)
 	particles.BackgroundTransparency = 1
 	particles.Parent = gui
 
-	for i = 1, 22 do
+	for i = 1, 32 do
 		local p = Instance.new("Frame")
-		p.Size = UDim2.fromOffset(math.random(3, 6), math.random(3, 6))
+		p.Size = UDim2.fromOffset(math.random(5, 9), math.random(5, 9))
 		p.Position = UDim2.fromScale(math.random(), math.random())
 		p.BackgroundColor3 = THEME_COLOR
-		p.BackgroundTransparency = 1
+		p.BackgroundTransparency = 0.15
 		p.BorderSizePixel = 0
 		p.Parent = particles
 
 		Instance.new("UICorner", p).CornerRadius = UDim.new(1, 0)
 
-		task.spawn(function()
-			task.wait(i * 0.08)
-			tween(p, TweenInfo.new(1), {BackgroundTransparency = 0.7})
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = THEME_COLOR
+		stroke.Thickness = 2
+		stroke.Transparency = 0.15
+		stroke.Parent = p
 
+		task.spawn(function()
 			while p.Parent do
 				tween(
 					p,
-					TweenInfo.new(math.random(12, 18), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+					TweenInfo.new(math.random(10, 18), Enum.EasingStyle.Sine),
 					{Position = UDim2.fromScale(math.random(), math.random())}
 				).Completed:Wait()
 			end
@@ -57,37 +83,58 @@ function LoadingScreen.show(playerGui)
 	end
 
 	-- =====================
-	-- MAIN CONTAINER
+	-- CONTAINER
 	-- =====================
 	local container = Instance.new("Frame")
-	container.Size = UDim2.fromOffset(520, 220)
+	container.Size = UDim2.fromOffset(520, 240)
 	container.Position = UDim2.fromScale(0.5, 0.25)
 	container.AnchorPoint = Vector2.new(0.5, 0.5)
 	container.BackgroundTransparency = 1
 	container.Parent = gui
 
-	-- subtle breathing motion
 	task.spawn(function()
 		while container.Parent do
-			tween(container, TweenInfo.new(3, Enum.EasingStyle.Sine), {
+			tween(container, TweenInfo.new(3), {
 				Position = container.Position + UDim2.fromOffset(0, -6)
 			}).Completed:Wait()
-
-			tween(container, TweenInfo.new(3, Enum.EasingStyle.Sine), {
+			tween(container, TweenInfo.new(3), {
 				Position = container.Position
 			}):Wait()
 		end
 	end)
 
 	-- =====================
-	-- TITLE (LEFT → RIGHT REVEAL)
+	-- TITLE GLOW
 	-- =====================
-	local titleMask = Instance.new("Frame")
-	titleMask.Size = UDim2.new(0, 0, 0, 70)
-	titleMask.Position = UDim2.fromOffset(0, 0)
-	titleMask.BackgroundTransparency = 1
-	titleMask.ClipsDescendants = true
-	titleMask.Parent = container
+	local glow = Instance.new("Frame")
+	glow.Size = UDim2.new(1, 0, 0, 80)
+	glow.BackgroundTransparency = 1
+	glow.Parent = container
+
+	local glowGradient = Instance.new("UIGradient", glow)
+	glowGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, THEME_COLOR),
+		ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+		ColorSequenceKeypoint.new(1, THEME_COLOR),
+	})
+
+	task.spawn(function()
+		while glow.Parent do
+			glowGradient.Offset = Vector2.new(-1, 0)
+			tween(glowGradient, TweenInfo.new(3, Enum.EasingStyle.Linear), {
+				Offset = Vector2.new(1, 0)
+			}).Completed:Wait()
+		end
+	end)
+
+	-- =====================
+	-- TITLE REVEAL
+	-- =====================
+	local mask = Instance.new("Frame")
+	mask.Size = UDim2.new(0, 0, 0, 70)
+	mask.ClipsDescendants = true
+	mask.BackgroundTransparency = 1
+	mask.Parent = container
 
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.fromScale(1, 1)
@@ -97,68 +144,34 @@ function LoadingScreen.show(playerGui)
 	title.TextScaled = true
 	title.TextColor3 = Color3.new(1, 1, 1)
 	title.TextTransparency = 1
-	title.Parent = titleMask
+	title.Parent = mask
 
-	local titleGradient = Instance.new("UIGradient", title)
-	titleGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
-		ColorSequenceKeypoint.new(0.5, THEME_COLOR),
-		ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1)),
+	whoosh:Play()
+
+	tween(mask, TweenInfo.new(1.1, Enum.EasingStyle.Quint), {
+		Size = UDim2.new(1, 0, 0, 70)
 	})
-
-	task.spawn(function()
-		while title.Parent do
-			titleGradient.Offset = Vector2.new(-1, 0)
-			tween(
-				titleGradient,
-				TweenInfo.new(2.8, Enum.EasingStyle.Linear),
-				{Offset = Vector2.new(1, 0)}
-			).Completed:Wait()
-		end
-	end)
-
-	-- reveal animation
-	tween(
-		titleMask,
-		TweenInfo.new(1.1, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-		{Size = UDim2.new(1, 0, 0, 70)}
-	)
-
-	tween(
-		title,
-		TweenInfo.new(0.8, Enum.EasingStyle.Quad),
-		{TextTransparency = 0}
-	)
+	tween(title, TweenInfo.new(0.8), {TextTransparency = 0})
 
 	-- =====================
 	-- SUBTITLE
 	-- =====================
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Size = UDim2.new(1, 0, 0, 24)
-	subtitle.Position = UDim2.fromOffset(0, 78)
+	subtitle.Position = UDim2.fromOffset(0, 80)
 	subtitle.BackgroundTransparency = 1
-	subtitle.Text = "Murder Mystery 2"
+	subtitle.Text = "Loading..."
 	subtitle.Font = Enum.Font.Gotham
 	subtitle.TextScaled = true
-	subtitle.TextColor3 = Color3.fromRGB(190, 190, 210)
-	subtitle.TextTransparency = 1
+	subtitle.TextColor3 = Color3.fromRGB(200, 200, 220)
 	subtitle.Parent = container
 
-	tween(
-		subtitle,
-		TweenInfo.new(0.8, Enum.EasingStyle.Quad),
-		{
-			TextTransparency = 0,
-			Position = subtitle.Position + UDim2.fromOffset(0, -4),
-		}
-	)
-
 	-- =====================
-	-- PROGRESS BAR
+	-- LOADING BAR LOOP
 	-- =====================
 	local barBg = Instance.new("Frame")
 	barBg.Size = UDim2.new(0.7, 0, 0, 5)
-	barBg.Position = UDim2.fromOffset(container.AbsoluteSize.X / 2, 125)
+	barBg.Position = UDim2.fromOffset(container.AbsoluteSize.X / 2, 135)
 	barBg.AnchorPoint = Vector2.new(0.5, 0)
 	barBg.BackgroundColor3 = Color3.new(1, 1, 1)
 	barBg.BackgroundTransparency = 0.85
@@ -167,59 +180,49 @@ function LoadingScreen.show(playerGui)
 	Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
 
 	local bar = Instance.new("Frame")
-	bar.Size = UDim2.fromScale(0, 1)
+	bar.Size = UDim2.fromScale(0.25, 1)
 	bar.BackgroundColor3 = THEME_COLOR
 	bar.BorderSizePixel = 0
 	bar.Parent = barBg
 	Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
 
-	local percent = Instance.new("TextLabel")
-	percent.Size = UDim2.fromOffset(100, 20)
-	percent.Position = UDim2.fromOffset(container.AbsoluteSize.X / 2, 140)
-	percent.AnchorPoint = Vector2.new(0.5, 0)
-	percent.BackgroundTransparency = 1
-	percent.Text = "0%"
-	percent.Font = Enum.Font.GothamBold
-	percent.TextSize = 14
-	percent.TextColor3 = Color3.new(1, 1, 1)
-	percent.TextTransparency = 1
-	percent.Parent = container
-
-	tween(percent, TweenInfo.new(0.5), {TextTransparency = 0})
-
-	-- =====================
-	-- ORGANIC LOADING
-	-- =====================
-	local progress = 0
-	while progress < 100 do
-		progress += math.random(2, 6)
-		progress = math.clamp(progress, 0, 100)
-
-		tween(
-			bar,
-			TweenInfo.new(math.random(25, 45) / 100, Enum.EasingStyle.Quint),
-			{Size = UDim2.fromScale(progress / 100, 1)}
-		)
-
-		percent.Text = progress .. "%"
-		task.wait(math.random(15, 30) / 100)
-	end
-
-	task.wait(0.6)
-
-	-- =====================
-	-- OUTRO FADE
-	-- =====================
-	for _, v in ipairs(gui:GetDescendants()) do
-		if v:IsA("TextLabel") then
-			tween(v, TweenInfo.new(0.6), {TextTransparency = 1})
-		elseif v:IsA("Frame") then
-			tween(v, TweenInfo.new(0.6), {BackgroundTransparency = 1})
+	task.spawn(function()
+		while bar.Parent do
+			tween(bar, TweenInfo.new(1.2, Enum.EasingStyle.Sine), {
+				Position = UDim2.fromScale(0.75, 0)
+			}).Completed:Wait()
+			bar.Position = UDim2.fromScale(0, 0)
 		end
+	end)
+
+	-- =====================
+	-- FINISH (CALLED BY MAIN)
+	-- =====================
+	local finished = false
+
+	local function finish()
+		if finished then return end
+		finished = true
+
+		doneSound:Play()
+		subtitle.Text = "Ready"
+
+		for _, v in ipairs(gui:GetDescendants()) do
+			if v:IsA("TextLabel") then
+				tween(v, TweenInfo.new(0.6), {TextTransparency = 1})
+			elseif v:IsA("Frame") then
+				tween(v, TweenInfo.new(0.6), {BackgroundTransparency = 1})
+			end
+		end
+
+		tween(blur, TweenInfo.new(0.6), {Size = 0})
+		task.wait(0.7)
+
+		gui:Destroy()
+		blur:Destroy()
 	end
 
-	task.wait(0.7)
-	gui:Destroy()
+	return finish
 end
 
 return LoadingScreen
