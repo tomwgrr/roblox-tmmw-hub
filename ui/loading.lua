@@ -188,32 +188,63 @@ function LoadingScreen.show(playerGui)
     -- =====================
     local finished = false
     local function finish()
-        if finished then return end
+        if finished then 
+            print("[LoadingScreen] Déjà fermé")
+            return 
+        end
         finished = true
 
         local elapsed = tick() - startTime
+        print("[LoadingScreen] Temps écoulé:", elapsed, "secondes")
+        
         if elapsed < MIN_LOADING_TIME then
-            task.wait(MIN_LOADING_TIME - elapsed)
+            local waitTime = MIN_LOADING_TIME - elapsed
+            print("[LoadingScreen] Attente de", waitTime, "secondes supplémentaires...")
+            task.wait(waitTime)
         end
 
-        doneSound:Play()
+        print("[LoadingScreen] Fermeture en cours...")
+        
+        pcall(function()
+            doneSound:Play()
+        end)
+        
         subtitle.Text = "Ready"
 
+        -- Fade out tous les éléments
         for _, v in ipairs(gui:GetDescendants()) do
-            if v:IsA("TextLabel") then
-                tween(v, TweenInfo.new(0.6), { TextTransparency = 1 })
-            elseif v:IsA("Frame") then
-                tween(v, TweenInfo.new(0.6), { BackgroundTransparency = 1 })
-            end
+            pcall(function()
+                if v:IsA("TextLabel") then
+                    tween(v, TweenInfo.new(0.6), { TextTransparency = 1 })
+                elseif v:IsA("Frame") and v.BackgroundTransparency < 1 then
+                    tween(v, TweenInfo.new(0.6), { BackgroundTransparency = 1 })
+                elseif v:IsA("UIStroke") then
+                    tween(v, TweenInfo.new(0.6), { Transparency = 1 })
+                end
+            end)
         end
 
         tween(blur, TweenInfo.new(0.6), { Size = 0 })
         task.wait(0.7)
 
-        gui:Destroy()
-        blur:Destroy()
+        -- Cleanup
+        pcall(function()
+            gui:Destroy()
+        end)
+        pcall(function()
+            blur:Destroy()
+        end)
+        pcall(function()
+            whoosh:Destroy()
+        end)
+        pcall(function()
+            doneSound:Destroy()
+        end)
+        
+        print("[LoadingScreen] ✓ Fermé complètement")
     end
 
+    print("[LoadingScreen] Loading screen affiché")
     return finish
 end
 
