@@ -56,7 +56,7 @@ function LoadingScreen.show(playerGui)
 	local centerContainer = Instance.new("Frame")
 	centerContainer.Parent = loadingGui
 	centerContainer.Size = UDim2.new(0, 500, 0, 200)
-	centerContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+	centerContainer.Position = UDim2.new(0.2, 0, 0.5, 0)
 	centerContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 	centerContainer.BackgroundTransparency = 1
 	
