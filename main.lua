@@ -35,6 +35,14 @@ local GAME_CONFIGS = {
 }
 
 -- ========================================
+-- GAME DETECTION (FAIT EN PREMIER)
+-- ========================================
+
+local currentGameId = game.PlaceId
+local gameConfig = GAME_CONFIGS[currentGameId]
+local isRecognizedGame = gameConfig ~= nil
+
+-- ========================================
 -- GLOBAL ENV
 -- ========================================
 
@@ -45,11 +53,22 @@ getgenv().TMMW = {
         UserInputService = UserInputService,
         Players = Players,
     },
-    CurrentGame = nil,
-    IsUniversalMode = true
+    CurrentGame = gameConfig,
+    IsUniversalMode = not isRecognizedGame,
+    PlaceId = currentGameId
 }
 
 local Modules = getgenv().TMMW.Modules
+
+print("=====================================")
+print("[TMMW] Démarrage du Hub")
+print("[TMMW] PlaceId:", currentGameId)
+if isRecognizedGame then
+    print("[TMMW] Jeu reconnu:", gameConfig.name)
+else
+    print("[TMMW] Mode universel uniquement")
+end
+print("=====================================")
 
 -- ========================================
 -- SAFE GUI CLEANUP
@@ -70,7 +89,9 @@ task.wait(0.1)
 -- MODULE LOADER
 -- ========================================
 
-local function loadModule(path, name)
+local function loadModule(path, name, required)
+    required = required or false
+    
     local success, result = pcall(function()
         local src = game:HttpGet(BASE_URL .. path)
         local module = loadstring(src)()
@@ -79,91 +100,77 @@ local function loadModule(path, name)
     end)
 
     if not success then
-        warn("[TMMW] Failed to load:", path)
-        warn(result)
+        if required then
+            warn("[TMMW] ✗ CRITIQUE - Échec:", name)
+        else
+            warn("[TMMW] ✗ Échec:", name)
+        end
         return nil
     end
 
+    print("[TMMW] ✓ Chargé:", name)
     return result
 end
 
 -- ========================================
--- GAME DETECTION
+-- LOAD CORE TECH MODULES (UNIVERSAL ONLY)
 -- ========================================
 
-local currentGameId = game.PlaceId
-local gameConfig = GAME_CONFIGS[currentGameId]
-
-if gameConfig then
-    getgenv().TMMW.CurrentGame = gameConfig
-    getgenv().TMMW.IsUniversalMode = false
-    print("[TMMW] Jeu détecté:", gameConfig.name, "| PlaceId:", currentGameId)
-else
-    print("[TMMW] Mode universel - PlaceId:", currentGameId)
-end
+print("[TMMW] Chargement modules universels...")
+local GameDetection     = loadModule("tech/GameDetection.lua", "GameDetection", false)
+local UniversalFeatures = loadModule("tech/UniversalFeatures.lua", "UniversalFeatures", false)
 
 -- ========================================
--- LOAD CORE TECH MODULES (UNIVERSAL)
--- ========================================
-
-local GameDetection     = loadModule("tech/GameDetection.lua", "GameDetection")
-local UniversalFeatures = loadModule("tech/UniversalFeatures.lua", "UniversalFeatures")
-
--- ========================================
--- LOAD GAME-SPECIFIC TECH MODULES
+-- LOAD GAME-SPECIFIC TECH MODULES (CONDITIONALLY)
 -- ========================================
 
 local gameSpecificModules = {}
 
-if gameConfig and gameConfig.techModules then
-    print("[TMMW] Chargement des modules spécifiques pour:", gameConfig.name)
+if isRecognizedGame then
+    print("[TMMW] Chargement modules pour:", gameConfig.name)
     for _, moduleName in ipairs(gameConfig.techModules) do
         local modulePath = "tech/" .. moduleName .. ".lua"
-        print("[TMMW] Tentative de chargement:", moduleName)
-        local loadedModule = loadModule(modulePath, moduleName)
+        local loadedModule = loadModule(modulePath, moduleName, false)
         if loadedModule then
-            table.insert(gameSpecificModules, loadedModule)
-            print("[TMMW] ✓", moduleName, "chargé")
-        else
-            warn("[TMMW] ✗", moduleName, "échec")
+            table.insert(gameSpecificModules, {
+                name = moduleName,
+                module = loadedModule
+            })
         end
     end
+    print("[TMMW]", #gameSpecificModules, "module(s) spécifique(s) chargé(s)")
 else
-    print("[TMMW] Aucun module spécifique - Mode universel uniquement")
+    print("[TMMW] Pas de modules spécifiques (mode universel)")
 end
 
 -- ========================================
 -- LOAD UI MODULES
 -- ========================================
 
-local LoadingScreen  = loadModule("ui/loading.lua", "LoadingScreen")
-local Header         = loadModule("ui/header.lua", "Header")
-local Sidebar        = loadModule("ui/sidebar.lua", "Sidebar")
-local Components     = loadModule("ui/components.lua", "Components")
-local ContentManager = loadModule("ui/content.lua", "ContentManager")
+print("[TMMW] Chargement interface...")
+local LoadingScreen  = loadModule("ui/loading.lua", "LoadingScreen", true)
+local Header         = loadModule("ui/header.lua", "Header", false)
+local Sidebar        = loadModule("ui/sidebar.lua", "Sidebar", true)
+local Components     = loadModule("ui/components.lua", "Components", false)
+local ContentManager = loadModule("ui/content.lua", "ContentManager", true)
 
--- Pages universelles
-local HomePage       = loadModule("ui/pages/home.lua", "HomePage")
-local UniversalPage  = loadModule("ui/pages/universal.lua", "UniversalPage")
+-- Pages universelles (toujours disponibles)
+local HomePage       = loadModule("ui/pages/home.lua", "HomePage", true)
+local UniversalPage  = loadModule("ui/pages/universal.lua", "UniversalPage", true)
 
--- Page spécifique au jeu (si disponible)
+-- Page spécifique (seulement si jeu reconnu)
 local GameSpecificPage = nil
-if gameConfig and gameConfig.page then
-    print("[TMMW] Chargement de la page:", gameConfig.page)
-    GameSpecificPage = loadModule("ui/pages/" .. gameConfig.page, gameConfig.name .. "Page")
-    if GameSpecificPage then
-        print("[TMMW] ✓ Page", gameConfig.name, "chargée")
-    else
-        warn("[TMMW] ✗ Échec chargement page", gameConfig.name)
-    end
+if isRecognizedGame and gameConfig.page then
+    print("[TMMW] Chargement page spécifique:", gameConfig.name)
+    GameSpecificPage = loadModule("ui/pages/" .. gameConfig.page, gameConfig.name .. "Page", false)
 end
 
 -- ========================================
 -- BASIC VALIDATION
 -- ========================================
 
-if not LoadingScreen or not ContentManager then
-    warn("[TMMW] Critical modules missing, abort.")
+if not LoadingScreen or not ContentManager or not HomePage or not UniversalPage then
+    warn("[TMMW] Modules critiques manquants, arrêt.")
     return
 end
 
@@ -177,38 +184,42 @@ local finishLoading = LoadingScreen.show(playerGui)
 -- INIT TECH SYSTEMS
 -- ========================================
 
+print("[TMMW] Initialisation systèmes...")
+
+-- Universal systems (always safe)
 pcall(function()
-    -- Core universal systems
-    print("[TMMW] Initialisation des systèmes universels...")
-    if GameDetection then 
+    if GameDetection and GameDetection.initialize then 
         GameDetection.initialize() 
         print("[TMMW] ✓ GameDetection initialisé")
     end
-    if UniversalFeatures then 
+end)
+
+pcall(function()
+    if UniversalFeatures and UniversalFeatures.initialize then 
         UniversalFeatures.initialize() 
         print("[TMMW] ✓ UniversalFeatures initialisé")
     end
-    
-    -- Game-specific systems (only if game is recognized)
-    if #gameSpecificModules > 0 then
-        print("[TMMW] Initialisation des systèmes spécifiques...")
-        for _, module in ipairs(gameSpecificModules) do
-            if module and module.initialize then
-                pcall(function()
-                    module.initialize()
-                    print("[TMMW] ✓ Module spécifique initialisé")
-                end)
-            end
-        end
-    end
 end)
 
+-- Game-specific systems (only for recognized games)
+if isRecognizedGame and #gameSpecificModules > 0 then
+    print("[TMMW] Initialisation modules", gameConfig.name .. "...")
+    for _, moduleData in ipairs(gameSpecificModules) do
+        pcall(function()
+            if moduleData.module and moduleData.module.initialize then
+                moduleData.module.initialize()
+                print("[TMMW] ✓", moduleData.name, "initialisé")
+            end
+        end)
+    end
+end
+
 -- ========================================
--- ATTENDRE LA FIN DU LOADING AVANT DE SPAWN LE GUI
+-- SPAWN GUI
 -- ========================================
 
 task.spawn(function()
-    finishLoading() -- minimum 5s + Main ready
+    finishLoading()
 
     -- ======= MAIN GUI =======
     local gui = Instance.new("ScreenGui")
@@ -234,27 +245,23 @@ task.spawn(function()
     -- ========================================
 
     if Header then
-        Header.create(mainFrame, gui)
+        pcall(function()
+            Header.create(mainFrame, gui)
+        end)
     end
 
     if Sidebar and ContentManager then
         local sidebar = Sidebar.create(mainFrame)
         local contentManager = ContentManager.new(mainFrame)
 
-        -- Register universal pages (always available)
-        if HomePage then 
-            contentManager:registerPage("Home", HomePage)
-            print("[TMMW] ✓ Page Home enregistrée")
-        end
-        if UniversalPage then 
-            contentManager:registerPage("Universal", UniversalPage)
-            print("[TMMW] ✓ Page Universal enregistrée")
-        end
+        -- Pages universelles (toujours)
+        contentManager:registerPage("Home", HomePage)
+        contentManager:registerPage("Universal", UniversalPage)
         
-        -- Register game-specific page ONLY if game is recognized
-        if GameSpecificPage and gameConfig then
+        -- Page spécifique (conditionnelle)
+        if isRecognizedGame and GameSpecificPage then
             contentManager:registerPage(gameConfig.name, GameSpecificPage)
-            print("[TMMW] ✓ Page", gameConfig.name, "enregistrée")
+            print("[TMMW] ✓ Page", gameConfig.name, "disponible")
         end
 
         Sidebar.setupNavigation(sidebar, contentManager)
@@ -266,14 +273,13 @@ task.spawn(function()
     -- ========================================
     
     print("=====================================")
-    print("[TMMW] Hub chargé avec succès ✓")
-    if gameConfig then
+    print("[TMMW] ✓ HUB PRÊT")
+    if isRecognizedGame then
         print("[TMMW] Mode:", gameConfig.name)
-        print("[TMMW] Fonctionnalités:", "Universal + " .. gameConfig.name)
+        print("[TMMW] Pages: Home, Universal,", gameConfig.name)
     else
-        print("[TMMW] Mode: Universel seulement")
-        print("[TMMW] Fonctionnalités: Universal uniquement")
+        print("[TMMW] Mode: Universel")
+        print("[TMMW] Pages: Home, Universal")
     end
-    print("[TMMW] Game PlaceId:", currentGameId)
     print("=====================================")
 end)
