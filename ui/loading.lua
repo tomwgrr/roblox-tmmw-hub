@@ -156,7 +156,7 @@ function LoadingScreen.show(playerGui)
 		end
 	end)
 	
-	-- Pourcentage
+	-- Pourcentage..
 	local percentText = Instance.new("TextLabel")
 	percentText.Parent = centerContainer
 	percentText.Size = UDim2.new(0, 100, 0, 25)
