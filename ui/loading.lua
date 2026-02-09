@@ -19,7 +19,9 @@ local function tween(obj, info, props)
 end
 
 function LoadingScreen.show(playerGui)
+    print("[LoadingScreen] === DÉBUT AFFICHAGE ===")
     local startTime = tick()
+    print("[LoadingScreen] Heure de démarrage:", startTime)
 
     -- =====================
     -- SCREEN GUI
@@ -29,6 +31,7 @@ function LoadingScreen.show(playerGui)
     gui.IgnoreGuiInset = true
     gui.ResetOnSpawn = false
     gui.Parent = playerGui
+    print("[LoadingScreen] ✓ GUI créé et attaché")
 
     -- =====================
     -- SOUNDS (OPTIONAL - Protected)
@@ -41,6 +44,7 @@ function LoadingScreen.show(playerGui)
         whoosh.SoundId = "rbxassetid://9118823101"
         whoosh.Volume = 0.6
         whoosh.Parent = SoundService
+        print("[LoadingScreen] ✓ Whoosh sound créé")
     end)
 
     pcall(function()
@@ -48,6 +52,7 @@ function LoadingScreen.show(playerGui)
         doneSound.SoundId = "rbxassetid://9118828562"
         doneSound.Volume = 0.5
         doneSound.Parent = SoundService
+        print("[LoadingScreen] ✓ Done sound créé")
     end)
 
     -- =====================
@@ -59,6 +64,7 @@ function LoadingScreen.show(playerGui)
         blur.Size = 0
         blur.Parent = Lighting
         tween(blur, TweenInfo.new(0.8), { Size = 18 })
+        print("[LoadingScreen] ✓ Blur effect créé")
     end)
 
     -- =====================
@@ -96,6 +102,7 @@ function LoadingScreen.show(playerGui)
             end
         end)
     end
+    print("[LoadingScreen] ✓ 32 particules créées")
 
     -- =====================
     -- CONTAINER
@@ -153,11 +160,13 @@ function LoadingScreen.show(playerGui)
     pcall(function()
         if whoosh then
             whoosh:Play()
+            print("[LoadingScreen] ✓ Whoosh sound joué")
         end
     end)
     
     tween(mask, TweenInfo.new(1.1, Enum.EasingStyle.Quint), { Size = UDim2.new(1, 0, 0, 70) })
     tween(title, TweenInfo.new(0.8), { TextTransparency = 0 })
+    print("[LoadingScreen] ✓ Titre animé")
 
     -- =====================
     -- SUBTITLE
@@ -198,84 +207,112 @@ function LoadingScreen.show(playerGui)
             bar.Position = UDim2.fromScale(0, 0)
         end
     end)
+    print("[LoadingScreen] ✓ Barre de chargement animée")
 
     -- =====================
     -- FINISH LOADING
     -- =====================
     local finished = false
+    
     local function finish()
+        print("[LoadingScreen] === FONCTION FINISH APPELÉE ===")
+        
         if finished then 
-            print("[LoadingScreen] Déjà fermé")
+            print("[LoadingScreen] ⚠ Déjà fermé, skip")
             return 
         end
         finished = true
+        print("[LoadingScreen] ✓ Flag 'finished' activé")
 
         local elapsed = tick() - startTime
         print("[LoadingScreen] Temps écoulé:", elapsed, "secondes")
+        print("[LoadingScreen] Temps minimum requis:", MIN_LOADING_TIME, "secondes")
         
         if elapsed < MIN_LOADING_TIME then
             local waitTime = MIN_LOADING_TIME - elapsed
-            print("[LoadingScreen] Attente de", waitTime, "secondes supplémentaires...")
+            print("[LoadingScreen] ⏳ Attente de", waitTime, "secondes supplémentaires...")
             task.wait(waitTime)
+            print("[LoadingScreen] ✓ Attente terminée")
+        else
+            print("[LoadingScreen] ✓ Temps minimum déjà écoulé")
         end
 
-        print("[LoadingScreen] Fermeture en cours...")
+        print("[LoadingScreen] === DÉBUT FERMETURE ===")
         
         -- Play done sound if available
         pcall(function()
             if doneSound then
                 doneSound:Play()
+                print("[LoadingScreen] ✓ Done sound joué")
             end
         end)
         
         subtitle.Text = "Ready"
+        print("[LoadingScreen] ✓ Texte changé en 'Ready'")
 
         -- Fade out tous les éléments
+        print("[LoadingScreen] Fade out des éléments...")
+        local fadeCount = 0
         for _, v in ipairs(gui:GetDescendants()) do
             pcall(function()
                 if v:IsA("TextLabel") then
                     tween(v, TweenInfo.new(0.6), { TextTransparency = 1 })
+                    fadeCount = fadeCount + 1
                 elseif v:IsA("Frame") and v.BackgroundTransparency < 1 then
                     tween(v, TweenInfo.new(0.6), { BackgroundTransparency = 1 })
+                    fadeCount = fadeCount + 1
                 elseif v:IsA("UIStroke") then
                     tween(v, TweenInfo.new(0.6), { Transparency = 1 })
+                    fadeCount = fadeCount + 1
                 end
             end)
         end
+        print("[LoadingScreen] ✓", fadeCount, "éléments en fade out")
 
         if blur then
             tween(blur, TweenInfo.new(0.6), { Size = 0 })
+            print("[LoadingScreen] ✓ Blur en fade out")
         end
         
+        print("[LoadingScreen] ⏳ Attente 0.7s pour fin des animations...")
         task.wait(0.7)
+        print("[LoadingScreen] ✓ Animations terminées")
 
         -- Cleanup
+        print("[LoadingScreen] === CLEANUP ===")
+        
         pcall(function()
             gui:Destroy()
+            print("[LoadingScreen] ✓ GUI détruit")
         end)
         
         if blur then
             pcall(function()
                 blur:Destroy()
+                print("[LoadingScreen] ✓ Blur détruit")
             end)
         end
         
         if whoosh then
             pcall(function()
                 whoosh:Destroy()
+                print("[LoadingScreen] ✓ Whoosh détruit")
             end)
         end
         
         if doneSound then
             pcall(function()
                 doneSound:Destroy()
+                print("[LoadingScreen] ✓ DoneSound détruit")
             end)
         end
         
-        print("[LoadingScreen] ✓ Fermé complètement")
+        print("[LoadingScreen] === ✓✓✓ FERMÉ COMPLÈTEMENT ✓✓✓ ===")
     end
 
-    print("[LoadingScreen] Loading screen affiché")
+    print("[LoadingScreen] ✓ Loading screen affiché, fonction finish retournée")
+    print("[LoadingScreen] Type de la fonction finish:", type(finish))
+    
     return finish
 end
 
