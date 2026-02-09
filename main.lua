@@ -17,6 +17,24 @@ local playerGui = player:WaitForChild("PlayerGui")
 local BASE_URL = "https://raw.githubusercontent.com/tomwgrr/roblox-tmmw-hub/main/"
 
 -- ========================================
+-- GAME-SPECIFIC CONFIGURATION
+-- ========================================
+
+local GAME_CONFIGS = {
+    [142823291] = { -- Murder Mystery 2
+        name = "MM2",
+        techModules = {"ESPSystem", "GunGrabber", "CoinFarmer"},
+        page = "mm2.lua"
+    },
+    -- Ajoutez facilement d'autres jeux ici :
+    -- [game_id] = {
+    --     name = "NomDuJeu",
+    --     techModules = {"Module1", "Module2"},
+    --     page = "nompage.lua"
+    -- },
+}
+
+-- ========================================
 -- GLOBAL ENV
 -- ========================================
 
@@ -26,7 +44,8 @@ getgenv().TMMW = {
         TweenService = TweenService,
         UserInputService = UserInputService,
         Players = Players,
-    }
+    },
+    CurrentGame = nil
 }
 
 local Modules = getgenv().TMMW.Modules
@@ -68,14 +87,41 @@ local function loadModule(path, name)
 end
 
 -- ========================================
--- LOAD TECH MODULES
+-- GAME DETECTION
+-- ========================================
+
+local currentGameId = game.PlaceId
+local gameConfig = GAME_CONFIGS[currentGameId]
+
+if gameConfig then
+    getgenv().TMMW.CurrentGame = gameConfig
+    print("[TMMW] Jeu détecté:", gameConfig.name)
+else
+    print("[TMMW] Mode universel - Jeu non reconnu")
+end
+
+-- ========================================
+-- LOAD CORE TECH MODULES (UNIVERSAL)
 -- ========================================
 
 local GameDetection     = loadModule("tech/GameDetection.lua", "GameDetection")
-local ESPSystem         = loadModule("tech/ESPSystem.lua", "ESPSystem")
-local GunGrabber        = loadModule("tech/GunGrabber.lua", "GunGrabber")
-local CoinFarmer        = loadModule("tech/CoinFarmer.lua", "CoinFarmer")
 local UniversalFeatures = loadModule("tech/UniversalFeatures.lua", "UniversalFeatures")
+
+-- ========================================
+-- LOAD GAME-SPECIFIC TECH MODULES
+-- ========================================
+
+local gameSpecificModules = {}
+
+if gameConfig and gameConfig.techModules then
+    for _, moduleName in ipairs(gameConfig.techModules) do
+        local modulePath = "tech/" .. moduleName .. ".lua"
+        local loadedModule = loadModule(modulePath, moduleName)
+        if loadedModule then
+            table.insert(gameSpecificModules, loadedModule)
+        end
+    end
+end
 
 -- ========================================
 -- LOAD UI MODULES
@@ -87,10 +133,15 @@ local Sidebar        = loadModule("ui/sidebar.lua", "Sidebar")
 local Components     = loadModule("ui/components.lua", "Components")
 local ContentManager = loadModule("ui/content.lua", "ContentManager")
 
--- Pages
+-- Pages universelles
 local HomePage       = loadModule("ui/pages/home.lua", "HomePage")
-local MM2Page        = loadModule("ui/pages/mm2.lua", "MM2Page")
 local UniversalPage  = loadModule("ui/pages/universal.lua", "UniversalPage")
+
+-- Page spécifique au jeu (si disponible)
+local GameSpecificPage = nil
+if gameConfig and gameConfig.page then
+    GameSpecificPage = loadModule("ui/pages/" .. gameConfig.page, gameConfig.name .. "Page")
+end
 
 -- ========================================
 -- BASIC VALIDATION
@@ -112,11 +163,16 @@ local finishLoading = LoadingScreen.show(playerGui)
 -- ========================================
 
 pcall(function()
+    -- Core universal systems
     if GameDetection then GameDetection.initialize() end
-    if ESPSystem then ESPSystem.initialize() end
-    if GunGrabber then GunGrabber.initialize() end
-    if CoinFarmer then CoinFarmer.initialize() end
     if UniversalFeatures then UniversalFeatures.initialize() end
+    
+    -- Game-specific systems
+    for _, module in ipairs(gameSpecificModules) do
+        if module and module.initialize then
+            module.initialize()
+        end
+    end
 end)
 
 -- ========================================
@@ -157,16 +213,30 @@ task.spawn(function()
         local sidebar = Sidebar.create(mainFrame)
         local contentManager = ContentManager.new(mainFrame)
 
-        if HomePage then contentManager:registerPage("Home", HomePage) end
-        if MM2Page then contentManager:registerPage("MM2", MM2Page) end
-        if UniversalPage then contentManager:registerPage("Universal", UniversalPage) end
+        -- Register universal pages
+        if HomePage then 
+            contentManager:registerPage("Home", HomePage) 
+        end
+        if UniversalPage then 
+            contentManager:registerPage("Universal", UniversalPage) 
+        end
+        
+        -- Register game-specific page if available
+        if GameSpecificPage and gameConfig then
+            contentManager:registerPage(gameConfig.name, GameSpecificPage)
+        end
 
         Sidebar.setupNavigation(sidebar, contentManager)
         contentManager:showPage("Home")
     end
 
     print("[TMMW] Hub chargé avec succès")
+    if gameConfig then
+        print("[TMMW] Mode:", gameConfig.name)
+    else
+        print("[TMMW] Mode: Universel")
+    end
     if GameDetection then
-        print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
+        print("[TMMW] Game ID:", currentGameId)
     end
 end)
