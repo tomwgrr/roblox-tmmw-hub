@@ -64,7 +64,7 @@ function LoadingScreen.show(playerGui)
 	local title = Instance.new("TextLabel")
 	title.Parent = centerContainer
 	title.Size = UDim2.new(1, 0, 0, 80)
-	title.Position = UDim2.new(0.5, 0, 0, 0)
+	title.Position = UDim2.new(0.2, 0, 0, 0)
 	title.AnchorPoint = Vector2.new(0.5, 0)
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -102,7 +102,7 @@ function LoadingScreen.show(playerGui)
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Parent = centerContainer
 	subtitle.Size = UDim2.new(1, 0, 0, 30)
-	subtitle.Position = UDim2.new(0.5, 0, 0, 90)
+	subtitle.Position = UDim2.new(0.2, 0, 0, 90)
 	subtitle.AnchorPoint = Vector2.new(0.5, 0)
 	subtitle.BackgroundTransparency = 1
 	subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
@@ -115,7 +115,7 @@ function LoadingScreen.show(playerGui)
 	local progressBarBg = Instance.new("Frame")
 	progressBarBg.Parent = centerContainer
 	progressBarBg.Size = UDim2.new(0.8, 0, 0, 6)
-	progressBarBg.Position = UDim2.new(0.5, 0, 1, -50)
+	progressBarBg.Position = UDim2.new(0.2, 0, 1, -50)
 	progressBarBg.AnchorPoint = Vector2.new(0.5, 0)
 	progressBarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	progressBarBg.BackgroundTransparency = 1
