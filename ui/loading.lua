@@ -1,5 +1,5 @@
 -- ========================================
--- LOADING SCREEN MODULE - ULTRA STYLE
+-- LOADING SCREEN MODULE - ULTRA STYLE (CENTER-TOP)
 -- ========================================
 local TweenService = game:GetService("TweenService")
 local LoadingScreen = {}
@@ -8,6 +8,7 @@ function LoadingScreen.show(playerGui)
 	local loadingGui = Instance.new("ScreenGui")
 	loadingGui.Name = "TMMWHubLoading"
 	loadingGui.ResetOnSpawn = false
+	loadingGui.IgnoreGuiInset = true -- Permet d'utiliser tout l'écran, même derrière la barre Roblox
 	loadingGui.Parent = playerGui
 	
 	-- Particules flottantes
@@ -30,7 +31,6 @@ function LoadingScreen.show(playerGui)
 		particleCorner.CornerRadius = UDim.new(1, 0)
 		particleCorner.Parent = particle
 		
-		-- Fade in des particules
 		spawn(function()
 			task.wait(i * 0.05)
 			local fadeIn = TweenService:Create(particle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -39,7 +39,6 @@ function LoadingScreen.show(playerGui)
 			fadeIn:Play()
 		end)
 		
-		-- Animation flottante
 		spawn(function()
 			while particle.Parent do
 				local randomY = UDim2.new(particle.Position.X.Scale, 0, math.random(-10, 110) / 100, 0)
@@ -52,19 +51,22 @@ function LoadingScreen.show(playerGui)
 		end)
 	end
 	
-	-- Container central
+	-- ========================================
+	-- MODIFICATION ICI : POSITIONNEMENT
+	-- ========================================
 	local centerContainer = Instance.new("Frame")
 	centerContainer.Parent = loadingGui
 	centerContainer.Size = UDim2.new(0, 500, 0, 200)
-	centerContainer.Position = UDim2.new(0.2, 0, 0.5, 0)
+	-- Positionné à 50% horizontal (milieu) et 30% vertical (entre le haut et le centre)
+	centerContainer.Position = UDim2.new(0.5, 0, 0.3, 0) 
 	centerContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 	centerContainer.BackgroundTransparency = 1
 	
-	-- Titre principal
+	-- Titre principal (Centré dans le container)
 	local title = Instance.new("TextLabel")
 	title.Parent = centerContainer
 	title.Size = UDim2.new(1, 0, 0, 80)
-	title.Position = UDim2.new(0.2, 0, 0, 0)
+	title.Position = UDim2.new(0.5, 0, 0, 0)
 	title.AnchorPoint = Vector2.new(0.5, 0)
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -78,7 +80,6 @@ function LoadingScreen.show(playerGui)
 	titlePadding.PaddingRight = UDim.new(0, 40)
 	titlePadding.Parent = title
 	
-	-- Gradient sur le titre
 	local titleGradient = Instance.new("UIGradient")
 	titleGradient.Parent = title
 	titleGradient.Color = ColorSequence.new{
@@ -102,7 +103,7 @@ function LoadingScreen.show(playerGui)
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Parent = centerContainer
 	subtitle.Size = UDim2.new(1, 0, 0, 30)
-	subtitle.Position = UDim2.new(0.2, 0, 0, 90)
+	subtitle.Position = UDim2.new(0.5, 0, 0, 90)
 	subtitle.AnchorPoint = Vector2.new(0.5, 0)
 	subtitle.BackgroundTransparency = 1
 	subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
@@ -111,11 +112,11 @@ function LoadingScreen.show(playerGui)
 	subtitle.Text = ""
 	subtitle.TextTransparency = 1
 	
-	-- Barre de progression stylée
+	-- Barre de progression
 	local progressBarBg = Instance.new("Frame")
 	progressBarBg.Parent = centerContainer
 	progressBarBg.Size = UDim2.new(0.8, 0, 0, 6)
-	progressBarBg.Position = UDim2.new(0.2, 0, 1, -50)
+	progressBarBg.Position = UDim2.new(0.5, 0, 1, -50)
 	progressBarBg.AnchorPoint = Vector2.new(0.5, 0)
 	progressBarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 	progressBarBg.BackgroundTransparency = 1
@@ -136,7 +137,6 @@ function LoadingScreen.show(playerGui)
 	progressCorner.CornerRadius = UDim.new(1, 0)
 	progressCorner.Parent = progressBar
 	
-	-- Gradient sur la barre de progression
 	local progressGradient = Instance.new("UIGradient")
 	progressGradient.Parent = progressBar
 	progressGradient.Color = ColorSequence.new{
@@ -169,16 +169,10 @@ function LoadingScreen.show(playerGui)
 	percentText.Text = "0%"
 	percentText.TextTransparency = 1
 	
-	-- ANIMATIONS D'ENTRÉE (FADE IN)
+	-- LOGIQUE D'ANIMATION
 	task.wait(0.2)
 	
-	-- Fade in du titre
-	local titleFadeIn = TweenService:Create(title, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		TextTransparency = 0
-	})
-	titleFadeIn:Play()
-	
-	-- Animation du texte
+	TweenService:Create(title, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
 	local text = "TMMW HUB"
 	for i = 1, #text do
 		title.Text = string.sub(text, 1, i)
@@ -186,71 +180,39 @@ function LoadingScreen.show(playerGui)
 	end
 	
 	task.wait(0.3)
-	
-	-- Fade in du sous-titre
-	local subtitleFadeIn = TweenService:Create(subtitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		TextTransparency = 0
-	})
-	subtitleFadeIn:Play()
-	
+	TweenService:Create(subtitle, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
 	subtitle.Text = "Murder Mystery 2"
 	
-	-- Fade in de la barre de progression
-	local progressBgFadeIn = TweenService:Create(progressBarBg, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0.3
-	})
-	progressBgFadeIn:Play()
+	TweenService:Create(progressBarBg, TweenInfo.new(0.5), {BackgroundTransparency = 0.3}):Play()
+	TweenService:Create(progressBar, TweenInfo.new(0.5), {BackgroundTransparency = 0}):Play()
+	TweenService:Create(percentText, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
 	
-	local progressBarFadeIn = TweenService:Create(progressBar, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0
-	})
-	progressBarFadeIn:Play()
-	
-	-- Fade in du pourcentage
-	local percentFadeIn = TweenService:Create(percentText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		TextTransparency = 0
-	})
-	percentFadeIn:Play()
-	
-	-- Animation de la barre de progression
 	local progressDuration = 2.5
-	local steps = 100
-	local stepTime = progressDuration / steps
-	
-	for i = 0, steps do
-		local progress = i / steps
+	for i = 0, 100 do
+		local progress = i / 100
 		progressBar.Size = UDim2.new(progress, 0, 1, 0)
-		percentText.Text = math.floor(progress * 100) .. "%"
-		task.wait(stepTime)
+		percentText.Text = i .. "%"
+		task.wait(progressDuration / 100)
 	end
 	
 	task.wait(0.3)
 	
-	-- ANIMATIONS DE SORTIE (FADE OUT)
-	local fadeInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- FADE OUT COMPLET
+	local fadeInfo = TweenInfo.new(0.6)
+	local components = {title, subtitle, percentText, progressBarBg, progressBar}
+	for _, comp in pairs(components) do
+		TweenService:Create(comp, fadeInfo, {
+			[comp:IsA("Frame") and "BackgroundTransparency" or "TextTransparency"] = 1
+		}):Play()
+	end
 	
-	local fadeTitle = TweenService:Create(title, fadeInfo, {TextTransparency = 1})
-	local fadeSubtitle = TweenService:Create(subtitle, fadeInfo, {TextTransparency = 1})
-	local fadePercent = TweenService:Create(percentText, fadeInfo, {TextTransparency = 1})
-	local fadeProgressBg = TweenService:Create(progressBarBg, fadeInfo, {BackgroundTransparency = 1})
-	local fadeProgressBar = TweenService:Create(progressBar, fadeInfo, {BackgroundTransparency = 1})
-	
-	fadeTitle:Play()
-	fadeSubtitle:Play()
-	fadePercent:Play()
-	fadeProgressBg:Play()
-	fadeProgressBar:Play()
-	
-	-- Fade out des particules
 	for _, child in pairs(particlesContainer:GetChildren()) do
 		if child:IsA("Frame") then
-			local particleFade = TweenService:Create(child, fadeInfo, {BackgroundTransparency = 1})
-			particleFade:Play()
+			TweenService:Create(child, fadeInfo, {BackgroundTransparency = 1}):Play()
 		end
 	end
 	
-	fadeTitle.Completed:Wait()
-	
+	task.wait(0.6)
 	loadingGui:Destroy()
 end
 
