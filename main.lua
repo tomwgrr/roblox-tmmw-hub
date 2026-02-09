@@ -87,10 +87,20 @@ local Sidebar        = loadModule("ui/sidebar.lua", "Sidebar")
 local Components     = loadModule("ui/components.lua", "Components")
 local ContentManager = loadModule("ui/content.lua", "ContentManager")
 
--- Pages
-local HomePage       = loadModule("ui/pages/home.lua", "HomePage")
-local MM2Page        = loadModule("ui/pages/mm2.lua", "MM2Page")
-local UniversalPage  = loadModule("ui/pages/universal.lua", "UniversalPage")
+-- ========================================
+-- GAME PAGES CONFIGURATION (extensible)
+-- ========================================
+local GamePages = {
+    [601479430] = { -- Murder Mystery 2
+        name = "MM2",
+        modulePath = "ui/pages/mm2.lua"
+    },
+    -- exemple d'ajout futur
+    -- [123456789] = { name = "GameX", modulePath = "ui/pages/gamex.lua" },
+}
+
+local HomePage      = loadModule("ui/pages/home.lua", "HomePage")
+local UniversalPage = loadModule("ui/pages/universal.lua", "UniversalPage")
 
 -- ========================================
 -- BASIC VALIDATION
@@ -157,9 +167,18 @@ task.spawn(function()
         local sidebar = Sidebar.create(mainFrame)
         local contentManager = ContentManager.new(mainFrame)
 
+        -- Pages toujours disponibles
         if HomePage then contentManager:registerPage("Home", HomePage) end
-        if MM2Page then contentManager:registerPage("MM2", MM2Page) end
         if UniversalPage then contentManager:registerPage("Universal", UniversalPage) end
+
+        -- Pages spécifiques au jeu actuel
+        local currentGameId = GameDetection and GameDetection.getCurrentGameId() or nil
+        if currentGameId and GamePages[currentGameId] then
+            local gamePageModule = loadModule(GamePages[currentGameId].modulePath, GamePages[currentGameId].name)
+            if gamePageModule then
+                contentManager:registerPage(GamePages[currentGameId].name, gamePageModule)
+            end
+        end
 
         Sidebar.setupNavigation(sidebar, contentManager)
         contentManager:showPage("Home")
@@ -167,6 +186,6 @@ task.spawn(function()
 
     print("[TMMW] Hub chargé avec succès")
     if GameDetection then
-        print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
+        print("[TMMW] Mode détecté:", GameDetection.getCurrentGameId())
     end
 end)
