@@ -102,7 +102,7 @@ if not LoadingScreen or not ContentManager then
 end
 
 -- ========================================
--- LOADING SCREEN (AJOUT)
+-- LOADING SCREEN
 -- ========================================
 
 local finishLoading = LoadingScreen.show(playerGui)
@@ -120,61 +120,53 @@ pcall(function()
 end)
 
 -- ========================================
--- MAIN GUI
+-- ATTENDRE LA FIN DU LOADING AVANT DE SPAWN LE GUI
 -- ========================================
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "TMMWHubUI"
-gui.ResetOnSpawn = false
-gui.Parent = playerGui
+task.spawn(function()
+    finishLoading() -- minimum 5s + Main ready
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Parent = gui
-mainFrame.Size = UDim2.new(0, 600, 0, 400)
-mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 0
-mainFrame.ClipsDescendants = true
+    -- ======= MAIN GUI =======
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "TMMWHubUI"
+    gui.ResetOnSpawn = false
+    gui.Parent = playerGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = mainFrame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Parent = gui
+    mainFrame.Size = UDim2.new(0, 600, 0, 400)
+    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.ClipsDescendants = true
 
--- ========================================
--- UI SETUP
--- ========================================
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = mainFrame
 
-if Header then
-    Header.create(mainFrame, gui)
-end
+    -- ========================================
+    -- UI SETUP
+    -- ========================================
 
-if Sidebar and ContentManager then
-    local sidebar = Sidebar.create(mainFrame)
-    local contentManager = ContentManager.new(mainFrame)
+    if Header then
+        Header.create(mainFrame, gui)
+    end
 
-    if HomePage then contentManager:registerPage("Home", HomePage) end
-    if MM2Page then contentManager:registerPage("MM2", MM2Page) end
-    if UniversalPage then contentManager:registerPage("Universal", UniversalPage) end
+    if Sidebar and ContentManager then
+        local sidebar = Sidebar.create(mainFrame)
+        local contentManager = ContentManager.new(mainFrame)
 
-    Sidebar.setupNavigation(sidebar, contentManager)
-    contentManager:showPage("Home")
-end
+        if HomePage then contentManager:registerPage("Home", HomePage) end
+        if MM2Page then contentManager:registerPage("MM2", MM2Page) end
+        if UniversalPage then contentManager:registerPage("Universal", UniversalPage) end
 
--- ========================================
--- FIN DU LOADING (AJOUT)
--- ========================================
+        Sidebar.setupNavigation(sidebar, contentManager)
+        contentManager:showPage("Home")
+    end
 
-task.wait(0.15)
-if finishLoading then
-    finishLoading()
-end
-
--- ========================================
--- DONE
--- ========================================
-
-print("[TMMW] Hub chargé avec succès")
-if GameDetection then
-    print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
-end
+    print("[TMMW] Hub chargé avec succès")
+    if GameDetection then
+        print("[TMMW] Mode détecté:", GameDetection.getCurrentGameMode())
+    end
+end)
