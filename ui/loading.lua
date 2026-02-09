@@ -1,5 +1,6 @@
 -- File: ui/loading.lua
--- Cinematic Neon Loading Screen with Sound (Main Controlled)
+-- Cinematic Neon Loading Screen
+-- Min display time: 5 seconds (Main controlled)
 
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
@@ -8,6 +9,7 @@ local SoundService = game:GetService("SoundService")
 local LoadingScreen = {}
 
 local THEME_COLOR = Color3.fromRGB(170, 80, 255)
+local MIN_LOADING_TIME = 5 -- seconds
 
 local function tween(obj, info, props)
 	local t = TweenService:Create(obj, info, props)
@@ -16,6 +18,8 @@ local function tween(obj, info, props)
 end
 
 function LoadingScreen.show(playerGui)
+	local startTime = tick()
+
 	-- =====================
 	-- GUI
 	-- =====================
@@ -44,7 +48,7 @@ function LoadingScreen.show(playerGui)
 	local blur = Instance.new("BlurEffect")
 	blur.Size = 0
 	blur.Parent = Lighting
-	tween(blur, TweenInfo.new(0.8), {Size = 18})
+	tween(blur, TweenInfo.new(0.8), { Size = 18 })
 
 	-- =====================
 	-- NEON PARTICLES
@@ -76,7 +80,7 @@ function LoadingScreen.show(playerGui)
 				tween(
 					p,
 					TweenInfo.new(math.random(10, 18), Enum.EasingStyle.Sine),
-					{Position = UDim2.fromScale(math.random(), math.random())}
+					{ Position = UDim2.fromScale(math.random(), math.random()) }
 				).Completed:Wait()
 			end
 		end)
@@ -104,7 +108,7 @@ function LoadingScreen.show(playerGui)
 	end)
 
 	-- =====================
-	-- TITLE GLOW
+	-- TITLE + GLOW
 	-- =====================
 	local glow = Instance.new("Frame")
 	glow.Size = UDim2.new(1, 0, 0, 80)
@@ -121,15 +125,14 @@ function LoadingScreen.show(playerGui)
 	task.spawn(function()
 		while glow.Parent do
 			glowGradient.Offset = Vector2.new(-1, 0)
-			tween(glowGradient, TweenInfo.new(3, Enum.EasingStyle.Linear), {
-				Offset = Vector2.new(1, 0)
-			}).Completed:Wait()
+			tween(
+				glowGradient,
+				TweenInfo.new(3, Enum.EasingStyle.Linear),
+				{ Offset = Vector2.new(1, 0) }
+			).Completed:Wait()
 		end
 	end)
 
-	-- =====================
-	-- TITLE REVEAL
-	-- =====================
 	local mask = Instance.new("Frame")
 	mask.Size = UDim2.new(0, 0, 0, 70)
 	mask.ClipsDescendants = true
@@ -151,7 +154,7 @@ function LoadingScreen.show(playerGui)
 	tween(mask, TweenInfo.new(1.1, Enum.EasingStyle.Quint), {
 		Size = UDim2.new(1, 0, 0, 70)
 	})
-	tween(title, TweenInfo.new(0.8), {TextTransparency = 0})
+	tween(title, TweenInfo.new(0.8), { TextTransparency = 0 })
 
 	-- =====================
 	-- SUBTITLE
@@ -196,7 +199,7 @@ function LoadingScreen.show(playerGui)
 	end)
 
 	-- =====================
-	-- FINISH (CALLED BY MAIN)
+	-- FINISH (MAIN CONTROLLED + MIN TIME)
 	-- =====================
 	local finished = false
 
@@ -204,18 +207,23 @@ function LoadingScreen.show(playerGui)
 		if finished then return end
 		finished = true
 
+		local elapsed = tick() - startTime
+		if elapsed < MIN_LOADING_TIME then
+			task.wait(MIN_LOADING_TIME - elapsed)
+		end
+
 		doneSound:Play()
 		subtitle.Text = "Ready"
 
 		for _, v in ipairs(gui:GetDescendants()) do
 			if v:IsA("TextLabel") then
-				tween(v, TweenInfo.new(0.6), {TextTransparency = 1})
+				tween(v, TweenInfo.new(0.6), { TextTransparency = 1 })
 			elseif v:IsA("Frame") then
-				tween(v, TweenInfo.new(0.6), {BackgroundTransparency = 1})
+				tween(v, TweenInfo.new(0.6), { BackgroundTransparency = 1 })
 			end
 		end
 
-		tween(blur, TweenInfo.new(0.6), {Size = 0})
+		tween(blur, TweenInfo.new(0.6), { Size = 0 })
 		task.wait(0.7)
 
 		gui:Destroy()
