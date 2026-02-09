@@ -26,12 +26,6 @@ local GAME_CONFIGS = {
         techModules = {"ESPSystem", "GunGrabber", "CoinFarmer"},
         page = "mm2.lua"
     },
-    -- Ajoutez facilement d'autres jeux ici :
-    -- [game_id] = {
-    --     name = "NomDuJeu",
-    --     techModules = {"Module1", "Module2"},
-    --     page = "nompage.lua"
-    -- },
 }
 
 -- ========================================
@@ -178,13 +172,15 @@ end
 -- LOADING SCREEN
 -- ========================================
 
+print("[TMMW] === DÉBUT CHARGEMENT LOADING SCREEN ===")
 local finishLoading = LoadingScreen.show(playerGui)
+print("[TMMW] Type de finishLoading:", type(finishLoading))
 
 -- ========================================
 -- INIT TECH SYSTEMS
 -- ========================================
 
-print("[TMMW] Initialisation systèmes...")
+print("[TMMW] === INITIALISATION SYSTÈMES ===")
 
 -- Universal systems (always safe)
 pcall(function()
@@ -214,72 +210,154 @@ if isRecognizedGame and #gameSpecificModules > 0 then
     end
 end
 
+print("[TMMW] === CRÉATION INTERFACE ===")
+
 -- ========================================
--- SPAWN GUI
+-- CRÉER L'INTERFACE PRINCIPALE
 -- ========================================
 
-task.spawn(function()
-    finishLoading()
+-- ======= MAIN GUI =======
+local gui = Instance.new("ScreenGui")
+gui.Name = "TMMWHubUI"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+print("[TMMW] ✓ ScreenGui créé")
 
-    -- ======= MAIN GUI =======
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "TMMWHubUI"
-    gui.ResetOnSpawn = false
-    gui.Parent = playerGui
+local mainFrame = Instance.new("Frame")
+mainFrame.Parent = gui
+mainFrame.Size = UDim2.new(0, 600, 0, 400)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.ClipsDescendants = true
+print("[TMMW] ✓ MainFrame créé")
 
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Parent = gui
-    mainFrame.Size = UDim2.new(0, 600, 0, 400)
-    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    mainFrame.BorderSizePixel = 0
-    mainFrame.ClipsDescendants = true
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = mainFrame
+-- ========================================
+-- UI SETUP
+-- ========================================
 
-    -- ========================================
-    -- UI SETUP
-    -- ========================================
+print("[TMMW] === SETUP INTERFACE ===")
 
-    if Header then
-        pcall(function()
-            Header.create(mainFrame, gui)
-        end)
-    end
+if Header then
+    pcall(function()
+        Header.create(mainFrame, gui)
+        print("[TMMW] ✓ Header créé")
+    end)
+else
+    print("[TMMW] ⚠ Header non disponible")
+end
 
-    if Sidebar and ContentManager then
-        local sidebar = Sidebar.create(mainFrame)
-        local contentManager = ContentManager.new(mainFrame)
-
-        -- Pages universelles (toujours)
-        contentManager:registerPage("Home", HomePage)
-        contentManager:registerPage("Universal", UniversalPage)
-        
-        -- Page spécifique (conditionnelle)
-        if isRecognizedGame and GameSpecificPage then
-            contentManager:registerPage(gameConfig.name, GameSpecificPage)
-            print("[TMMW] ✓ Page", gameConfig.name, "disponible")
-        end
-
-        Sidebar.setupNavigation(sidebar, contentManager)
-        contentManager:showPage("Home")
-    end
-
-    -- ========================================
-    -- FINAL STATUS
-    -- ========================================
+if Sidebar and ContentManager then
+    print("[TMMW] Création Sidebar...")
+    local sidebar = Sidebar.create(mainFrame)
+    print("[TMMW] ✓ Sidebar créé")
     
-    print("=====================================")
-    print("[TMMW] ✓ HUB PRÊT")
-    if isRecognizedGame then
-        print("[TMMW] Mode:", gameConfig.name)
-        print("[TMMW] Pages: Home, Universal,", gameConfig.name)
+    print("[TMMW] Création ContentManager...")
+    local contentManager = ContentManager.new(mainFrame)
+    print("[TMMW] ✓ ContentManager créé")
+    
+    print("[TMMW] === ENREGISTREMENT PAGES ===")
+
+    -- Pages universelles (toujours)
+    if HomePage then
+        local success = contentManager:registerPage("Home", HomePage)
+        if success then
+            print("[TMMW] ✓ Page Home enregistrée")
+        else
+            warn("[TMMW] ✗ Échec page Home")
+        end
     else
-        print("[TMMW] Mode: Universel")
-        print("[TMMW] Pages: Home, Universal")
+        warn("[TMMW] ⚠ HomePage non disponible")
     end
-    print("=====================================")
-end)
+    
+    if UniversalPage then
+        local success = contentManager:registerPage("Universal", UniversalPage)
+        if success then
+            print("[TMMW] ✓ Page Universal enregistrée")
+        else
+            warn("[TMMW] ✗ Échec page Universal")
+        end
+    else
+        warn("[TMMW] ⚠ UniversalPage non disponible")
+    end
+    
+    -- Page spécifique (seulement si vraiment disponible)
+    if isRecognizedGame and GameSpecificPage then
+        local success = contentManager:registerPage(gameConfig.name, GameSpecificPage)
+        if success then
+            print("[TMMW] ✓ Page", gameConfig.name, "enregistrée")
+        else
+            warn("[TMMW] ✗ Impossible d'enregistrer la page", gameConfig.name)
+        end
+    end
+
+    print("[TMMW] === SETUP NAVIGATION ===")
+    Sidebar.setupNavigation(sidebar, contentManager)
+    print("[TMMW] ✓ Navigation configurée")
+    
+    -- Vérifier que la page Home existe avant de l'afficher
+    if contentManager:pageExists("Home") then
+        contentManager:showPage("Home")
+        print("[TMMW] ✓ Page Home affichée")
+    else
+        warn("[TMMW] ⚠ Page Home introuvable!")
+    end
+else
+    warn("[TMMW] ⚠ Sidebar ou ContentManager non disponible")
+end
+
+-- ========================================
+-- FERMETURE DU LOADING
+-- ========================================
+
+print("[TMMW] === FERMETURE LOADING SCREEN ===")
+print("[TMMW] Attente 1 seconde avant fermeture...")
+task.wait(1)
+
+if finishLoading then
+    if type(finishLoading) == "function" then
+        print("[TMMW] Appel de finishLoading()...")
+        local success, err = pcall(function()
+            finishLoading()
+        end)
+        if success then
+            print("[TMMW] ✓ finishLoading() exécuté avec succès")
+        else
+            warn("[TMMW] ✗ Erreur dans finishLoading():", err)
+        end
+    else
+        warn("[TMMW] ✗ finishLoading n'est pas une fonction! Type:", type(finishLoading))
+    end
+else
+    warn("[TMMW] ✗ finishLoading est nil!")
+end
+
+print("[TMMW] === ATTENTE 2 SECONDES ===")
+task.wait(2)
+
+-- Force close en cas de problème
+print("[TMMW] Vérification du loading screen...")
+if playerGui:FindFirstChild("TMMWHubLoading") then
+    warn("[TMMW] ⚠ Loading screen encore présent! Force close...")
+    playerGui.TMMWHubLoading:Destroy()
+    print("[TMMW] ✓ Loading fermé de force")
+end
+
+-- ========================================
+-- FINAL STATUS
+-- ========================================
+
+print("=====================================")
+print("[TMMW] ✓ HUB COMPLÈTEMENT CHARGÉ")
+if isRecognizedGame then
+    print("[TMMW] Mode:", gameConfig.name)
+else
+    print("[TMMW] Mode: Universel")
+end
+print("[TMMW] Game PlaceId:", currentGameId)
+print("=====================================")
