@@ -1,18 +1,9 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
-
 local player = Players.LocalPlayer
-local PremiumSystem = getgenv().TMMW.PremiumSystem
 
-local CoinFarmer = {
-    PREMIUM_FEATURES = {
-        setAutoFarm = true,
-        setSpeed = true,
-        setCooldown = true,
-    }
-}
-
+local CoinFarmer = {}
 local autoFarm = false
 local speed = 25
 local cooldown = 0.05
@@ -79,11 +70,6 @@ local function farmStep()
 end
 
 function CoinFarmer.setAutoFarm(state)
-    if not PremiumSystem.hasPremium() then
-        warn("[TMMW] Premium required for Auto Farm Coins")
-        return false
-    end
-    
     autoFarm = state
     if state then
         task.spawn(farmStep)
@@ -97,21 +83,11 @@ function CoinFarmer.setAutoFarm(state)
 end
 
 function CoinFarmer.setSpeed(value)
-    if not PremiumSystem.hasPremium() then
-        warn("[TMMW] Premium required")
-        return false
-    end
-    
     speed = math.clamp(value, 10, 200)
     return true
 end
 
 function CoinFarmer.setCooldown(value)
-    if not PremiumSystem.hasPremium() then
-        warn("[TMMW] Premium required")
-        return false
-    end
-    
     cooldown = math.clamp(value, 0, 0.3)
     return true
 end
