@@ -12,10 +12,11 @@ local currentTween = nil
 local isBagFull = false
 local MAX_DISTANCE = 100
 local isProcessing = false
+local MAX_COINS_IN_CACHE = 15
 
 -- Cache optimisé
 local coinCache = {}
-local cacheUpdateInterval = 1
+local cacheUpdateInterval = 0.8
 local lastCacheUpdate = 0
 local coinsFolder = nil
 
@@ -45,21 +46,37 @@ local function updateCoinCache()
     lastCacheUpdate = currentTime
     table.clear(coinCache)
     
+    local hrp = getHRP()
+    local hrpPos = hrp.Position
+    local tempCoins = {}
+    
     local folder = findCoinsFolder()
     if folder then
         for _, obj in pairs(folder:GetDescendants()) do
             if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
-                table.insert(coinCache, obj)
+                local dist = (obj.Position - hrpPos).Magnitude
+                if dist <= MAX_DISTANCE then
+                    table.insert(tempCoins, {coin = obj, distance = dist})
+                end
             end
         end
     else
-        -- Fallback si pas de folder trouvé
         for _, obj in pairs(Workspace:GetDescendants()) do
             if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
-                table.insert(coinCache, obj)
-                if #coinCache >= 50 then break end -- Limite pour éviter le lag
+                local dist = (obj.Position - hrpPos).Magnitude
+                if dist <= MAX_DISTANCE then
+                    table.insert(tempCoins, {coin = obj, distance = dist})
+                    if #tempCoins >= 50 then break end
+                end
             end
         end
+    end
+    
+    -- Trier par distance et garder seulement les 15 plus proches
+    table.sort(tempCoins, function(a, b) return a.distance < b.distance end)
+    
+    for i = 1, math.min(#tempCoins, MAX_COINS_IN_CACHE) do
+        table.insert(coinCache, tempCoins[i].coin)
     end
 end
 
@@ -71,14 +88,14 @@ local function findNearestCoin()
     local nearest = nil
     local minDist = math.huge
     
-    -- Parcourir seulement les 20 premiers coins pour optimiser
-    local maxCheck = math.min(#coinCache, 20)
-    
-    for i = 1, maxCheck do
+    -- Parcourir seulement les coins du cache (max 15)
+    for i = #coinCache, 1, -1 do
         local coin = coinCache[i]
-        if coin and coin.Parent then
+        if not coin or not coin.Parent then
+            table.remove(coinCache, i)
+        else
             local dist = (coin.Position - hrpPos).Magnitude
-            if dist <= MAX_DISTANCE and dist < minDist then
+            if dist < minDist then
                 minDist = dist
                 nearest = coin
             end
