@@ -10,6 +10,7 @@ local speed = 25
 local cooldown = 0.05
 local currentTween = nil
 local isBagFull = false
+local MAX_DISTANCE = 100
 
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
@@ -24,7 +25,7 @@ local function findNearestCoin()
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
             local dist = (obj.Position - hrp.Position).Magnitude
-            if dist < minDist then
+            if dist < minDist and dist <= MAX_DISTANCE then
                 minDist = dist
                 nearest = obj
             end
