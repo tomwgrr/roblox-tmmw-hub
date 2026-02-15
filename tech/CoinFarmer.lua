@@ -28,6 +28,37 @@ local function getHRP()
     return char:WaitForChild("HumanoidRootPart")
 end
 
+local function makeCharacterLieDown(state)
+    local char = player.Character
+    if not char then return end
+    
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    if state then
+        -- Mettre le personnage couché
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        humanoid.PlatformStand = true
+        
+        -- Incliner le personnage pour qu'il soit au sol
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+        end
+    else
+        -- Remettre le personnage debout
+        humanoid.PlatformStand = false
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        
+        -- Réorienter correctement
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local pos = hrp.Position
+            hrp.CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, 0)
+        end
+    end
+end
+
 local function findCoinsFolder()
     if not coinsFolder or not coinsFolder.Parent then
         for _, obj in pairs(Workspace:GetChildren()) do
@@ -208,9 +239,12 @@ local function farmStep()
             return
         end
         
+        -- Déplacer le personnage couché vers la pièce
+        local targetCFrame = coin.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+        
         local tweenTime = distance / speed
         local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-        currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
+        currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
         
         local connection
         connection = currentTween.Completed:Connect(function()
@@ -240,6 +274,9 @@ function CoinFarmer.setAutoFarm(state)
         table.clear(coinCache)
         lastCacheUpdate = 0
         
+        -- Mettre le personnage couché
+        makeCharacterLieDown(true)
+        
         -- Démarrer le monitoring du bag
         if not bagMonitorRunning then
             bagMonitorRunning = true
@@ -254,6 +291,9 @@ function CoinFarmer.setAutoFarm(state)
         end
         isProcessing = false
         bagMonitorRunning = false
+        
+        -- Remettre le personnage debout
+        makeCharacterLieDown(false)
     end
     return true
 end
@@ -294,6 +334,14 @@ function CoinFarmer.initialize()
                     task.defer(farmStep)
                 end
             end
+        end
+    end)
+    
+    -- Remettre debout si le personnage meurt
+    player.CharacterAdded:Connect(function(char)
+        if autoFarm then
+            task.wait(1)
+            makeCharacterLieDown(true)
         end
     end)
 end
