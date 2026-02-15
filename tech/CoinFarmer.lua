@@ -13,7 +13,6 @@ local isBagFull = false
 local MAX_DISTANCE = 100
 local isProcessing = false
 local MAX_COINS_IN_CACHE = 15
-local useLieDownMode = false
 
 -- Cache optimisé
 local coinCache = {}
@@ -21,62 +20,9 @@ local cacheUpdateInterval = 0.8
 local lastCacheUpdate = 0
 local coinsFolder = nil
 
--- Monitoring du bag
-local bagMonitorRunning = false
-
--- Système de maintien de position couchée
-local bodyGyro = nil
-local bodyVelocity = nil
-local anchorConnection = nil
-
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
-end
-
-local function makeCharacterLieDown(state)
-    local char = player.Character
-    if not char then return end
-    
-    local humanoid = char:FindFirstChild("Humanoid")
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not humanoid or not hrp then return end
-    
-    if state then
-        -- Ancrer le HumanoidRootPart pour bloquer toute physique
-        hrp.Anchored = true
-        
-        -- Désactiver toutes les animations
-        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
-            track:Stop()
-        end
-        
-        -- Incliner le personnage à 90 degrés (couché)
-        local currentPos = hrp.Position
-        hrp.CFrame = CFrame.new(currentPos) * CFrame.Angles(math.rad(90), 0, 0)
-        
-        -- Désactiver la collision avec les autres joueurs
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-        
-    else
-        -- Désancrer
-        hrp.Anchored = false
-        
-        -- Réactiver la collision
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                part.CanCollide = true
-            end
-        end
-        
-        -- Réorienter correctement
-        local pos = hrp.Position
-        hrp.CFrame = CFrame.new(pos)
-    end
 end
 
 local function findCoinsFolder()
@@ -89,60 +35,6 @@ local function findCoinsFolder()
         end
     end
     return coinsFolder
-end
-
-local function checkBagStatus()
-    local playerGui = player:WaitForChild("PlayerGui")
-    local mainGui = playerGui:FindFirstChild("MainGUI")
-    if not mainGui then return false end
-    
-    local coinBags = mainGui:FindFirstChild("CoinBags")
-    if not coinBags then return false end
-    
-    local container = coinBags:FindFirstChild("Container")
-    if not container then return false end
-    
-    -- Vérifier si au moins un bag a de la place
-    for _, bag in pairs(container:GetChildren()) do
-        if bag:IsA("Frame") and bag.Visible then
-            local fullIcon = bag:FindFirstChild("Full")
-            if fullIcon and not fullIcon.Visible then
-                return false -- Au moins un bag a de la place
-            end
-        end
-    end
-    
-    return true -- Tous les bags visibles sont pleins
-end
-
-local function monitorBag()
-    while autoFarm and bagMonitorRunning do
-        local bagIsFull = checkBagStatus()
-        
-        if bagIsFull and not isBagFull then
-            isBagFull = true
-            warn("[TMMW] Coin bag is full! Waiting for space...")
-            if currentTween then
-                currentTween:Cancel()
-                currentTween = nil
-            end
-            isProcessing = false
-            
-            -- Remettre debout si le bag est plein
-            if useLieDownMode then
-                makeCharacterLieDown(false)
-            end
-        elseif not bagIsFull and isBagFull then
-            isBagFull = false
-            print("[TMMW] Coin bag has space! Resuming auto farm...")
-            isProcessing = false
-            if autoFarm then
-                task.defer(farmStep)
-            end
-        end
-        
-        task.wait(3) -- Vérifier toutes les 3 secondes
-    end
 end
 
 local function updateCoinCache()
@@ -224,22 +116,14 @@ local function findNearestCoin()
 end
 
 local function farmStep()
-    -- Vérifier AVANT tout si on doit s'arrêter
-    if not autoFarm then 
+    if not autoFarm or isProcessing then 
         return 
     end
     
     -- Si le bag est plein, attendre qu'il se vide
     if isBagFull then
-        if useLieDownMode then
-            makeCharacterLieDown(false)
-        end
-        task.wait(3)
+        task.wait(2)
         task.defer(farmStep)
-        return
-    end
-    
-    if isProcessing then
         return
     end
     
@@ -248,20 +132,12 @@ local function farmStep()
     local success, result = pcall(function()
         local coin = findNearestCoin()
         
-        -- Si aucune pièce dans la zone, remettre debout et attendre
+        -- Si aucune pièce dans la zone, attendre plus longtemps avant de revérifier
         if not coin then
-            if useLieDownMode then
-                makeCharacterLieDown(false)
-            end
             isProcessing = false
             task.wait(2)
             task.defer(farmStep)
             return
-        end
-        
-        -- Se mettre couché uniquement quand on va collecter
-        if useLieDownMode then
-            makeCharacterLieDown(true)
         end
         
         local hrp = getHRP()
@@ -281,43 +157,17 @@ local function farmStep()
             return
         end
         
-        -- Calculer la position cible
-        local targetPosition = coin.Position
-        local targetCFrame
-        
-        if useLieDownMode then
-            -- Garder l'orientation couchée pendant le déplacement
-            targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(math.rad(90), 0, 0)
-        else
-            targetCFrame = CFrame.new(targetPosition)
-        end
-        
-        -- Désancrer temporairement pour le déplacement
-        if useLieDownMode then
-            hrp.Anchored = false
-        end
-        
         local tweenTime = distance / speed
         local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-        currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+        currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
         
         local connection
         connection = currentTween.Completed:Connect(function()
             connection:Disconnect()
             currentTween = nil
-            
-            -- Réancrer après le déplacement
-            if useLieDownMode then
-                hrp.Anchored = true
-            end
-            
             task.wait(cooldown)
             isProcessing = false
-            
-            -- Vérifier à nouveau avant de continuer
-            if autoFarm and not isBagFull then
-                task.defer(farmStep)
-            end
+            task.defer(farmStep)
         end)
         
         currentTween:Play()
@@ -325,16 +175,9 @@ local function farmStep()
     
     if not success then
         warn("[TMMW] Farm error:", result)
-        if useLieDownMode then
-            makeCharacterLieDown(false)
-        end
         isProcessing = false
         task.wait(2)
-        
-        -- Vérifier avant de relancer
-        if autoFarm and not isBagFull then
-            task.defer(farmStep)
-        end
+        task.defer(farmStep)
     end
 end
 
@@ -345,13 +188,6 @@ function CoinFarmer.setAutoFarm(state)
         isProcessing = false
         table.clear(coinCache)
         lastCacheUpdate = 0
-        
-        -- Démarrer le monitoring du bag
-        if not bagMonitorRunning then
-            bagMonitorRunning = true
-            task.spawn(monitorBag)
-        end
-        
         task.defer(farmStep)
     else
         if currentTween then
@@ -359,24 +195,7 @@ function CoinFarmer.setAutoFarm(state)
             currentTween = nil
         end
         isProcessing = false
-        bagMonitorRunning = false
-        
-        -- Remettre le personnage debout si mode couché activé
-        if useLieDownMode then
-            makeCharacterLieDown(false)
-        end
     end
-    return true
-end
-
-function CoinFarmer.setLieDownMode(state)
-    useLieDownMode = state
-    
-    -- Si on désactive le mode couché pendant l'auto farm, remettre debout
-    if not state and autoFarm then
-        makeCharacterLieDown(false)
-    end
-    
     return true
 end
 
@@ -412,18 +231,11 @@ function CoinFarmer.initialize()
             if isBagFull then
                 isBagFull = false
                 print("[TMMW] Coin bag has space! Resuming auto farm...")
-                isProcessing = false
                 if autoFarm then
                     task.defer(farmStep)
                 end
             end
         end
-    end)
-    
-    -- Remettre debout si le personnage meurt
-    player.CharacterAdded:Connect(function(char)
-        task.wait(1)
-        -- Ne pas se remettre couché automatiquement, attendre d'avoir des pièces à collecter
     end)
 end
 
