@@ -2,26 +2,38 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 local CoinFarmer = {}
 local autoFarm = false
 local speed = 25
-local cooldown = 0.05
+local cooldown = 0.1
 local currentTween = nil
 local isBagFull = false
 local MAX_DISTANCE = 100
 local isProcessing = false
 
--- Cache pour les coins
+-- Cache optimisé
 local coinCache = {}
-local cacheUpdateInterval = 0.5
+local cacheUpdateInterval = 1
 local lastCacheUpdate = 0
+local coinsFolder = nil
 
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
+end
+
+local function findCoinsFolder()
+    if not coinsFolder or not coinsFolder.Parent then
+        for _, obj in pairs(Workspace:GetChildren()) do
+            if obj:FindFirstChild("Coin_Server") then
+                coinsFolder = obj
+                break
+            end
+        end
+    end
+    return coinsFolder
 end
 
 local function updateCoinCache()
@@ -33,9 +45,20 @@ local function updateCoinCache()
     lastCacheUpdate = currentTime
     table.clear(coinCache)
     
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
-            table.insert(coinCache, obj)
+    local folder = findCoinsFolder()
+    if folder then
+        for _, obj in pairs(folder:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
+                table.insert(coinCache, obj)
+            end
+        end
+    else
+        -- Fallback si pas de folder trouvé
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Name == "Coin_Server" then
+                table.insert(coinCache, obj)
+                if #coinCache >= 50 then break end -- Limite pour éviter le lag
+            end
         end
     end
 end
@@ -44,15 +67,17 @@ local function findNearestCoin()
     updateCoinCache()
     
     local hrp = getHRP()
+    local hrpPos = hrp.Position
     local nearest = nil
     local minDist = math.huge
     
-    for i = #coinCache, 1, -1 do
+    -- Parcourir seulement les 20 premiers coins pour optimiser
+    local maxCheck = math.min(#coinCache, 20)
+    
+    for i = 1, maxCheck do
         local coin = coinCache[i]
-        if not coin or not coin.Parent then
-            table.remove(coinCache, i)
-        else
-            local dist = (coin.Position - hrp.Position).Magnitude
+        if coin and coin.Parent then
+            local dist = (coin.Position - hrpPos).Magnitude
             if dist <= MAX_DISTANCE and dist < minDist then
                 minDist = dist
                 nearest = coin
@@ -70,41 +95,52 @@ local function farmStep()
     
     isProcessing = true
     
-    local hrp = getHRP()
-    local coin = findNearestCoin()
+    local success, result = pcall(function()
+        local hrp = getHRP()
+        local coin = findNearestCoin()
+        
+        if coin then
+            if currentTween then
+                currentTween:Cancel()
+                currentTween = nil
+            end
+            
+            local distance = (coin.Position - hrp.Position).Magnitude
+            
+            if distance < 3 then
+                coin.Parent = nil
+                task.wait(cooldown)
+                isProcessing = false
+                task.defer(farmStep)
+                return
+            end
+            
+            local tweenTime = distance / speed
+            local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
+            currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
+            
+            local connection
+            connection = currentTween.Completed:Connect(function()
+                connection:Disconnect()
+                currentTween = nil
+                task.wait(cooldown)
+                isProcessing = false
+                task.defer(farmStep)
+            end)
+            
+            currentTween:Play()
+        else
+            isProcessing = false
+            task.wait(1)
+            task.defer(farmStep)
+        end
+    end)
     
-    if coin then
-        if currentTween then
-            currentTween:Cancel()
-            currentTween = nil
-        end
-        
-        local distance = (coin.Position - hrp.Position).Magnitude
-        
-        if distance < 3 then
-            coin.Parent = nil
-            task.wait(cooldown)
-            isProcessing = false
-            task.spawn(farmStep)
-            return
-        end
-        
-        local tweenTime = distance / speed
-        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-        currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
-        
-        currentTween.Completed:Connect(function()
-            currentTween = nil
-            task.wait(cooldown)
-            isProcessing = false
-            task.spawn(farmStep)
-        end)
-        
-        currentTween:Play()
-    else
+    if not success then
+        warn("[TMMW] Farm error:", result)
         isProcessing = false
-        task.wait(0.5)
-        task.spawn(farmStep)
+        task.wait(1)
+        task.defer(farmStep)
     end
 end
 
@@ -113,7 +149,9 @@ function CoinFarmer.setAutoFarm(state)
     if state then
         isBagFull = false
         isProcessing = false
-        task.spawn(farmStep)
+        table.clear(coinCache)
+        lastCacheUpdate = 0
+        task.defer(farmStep)
     else
         if currentTween then
             currentTween:Cancel()
@@ -130,7 +168,7 @@ function CoinFarmer.setSpeed(value)
 end
 
 function CoinFarmer.setCooldown(value)
-    cooldown = math.clamp(value, 0, 0.3)
+    cooldown = math.clamp(value, 0, 0.5)
     return true
 end
 
