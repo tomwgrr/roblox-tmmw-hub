@@ -23,6 +23,10 @@ local coinsFolder = nil
 -- Monitoring du bag
 local bagMonitorRunning = false
 
+-- Système de maintien de position couchée
+local bodyGyro = nil
+local bodyVelocity = nil
+
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
@@ -33,29 +37,72 @@ local function makeCharacterLieDown(state)
     if not char then return end
     
     local humanoid = char:FindFirstChild("Humanoid")
-    if not humanoid then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not hrp then return end
     
     if state then
-        -- Mettre le personnage couché
+        -- Désactiver toutes les animations
+        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+            track:Stop()
+        end
+        
+        -- Mettre le personnage en mode Physics
         humanoid:ChangeState(Enum.HumanoidStateType.Physics)
         humanoid.PlatformStand = true
         
-        -- Incliner le personnage pour qu'il soit au sol
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+        -- Créer un BodyGyro pour maintenir l'orientation
+        if not bodyGyro then
+            bodyGyro = Instance.new("BodyGyro")
+            bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            bodyGyro.P = 10000
+            bodyGyro.D = 500
+            bodyGyro.Parent = hrp
         end
+        
+        -- Créer un BodyVelocity pour contrôler le mouvement
+        if not bodyVelocity then
+            bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(0, 9e9, 0)
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            bodyVelocity.Parent = hrp
+        end
+        
+        -- Incliner le personnage à 90 degrés (couché)
+        local currentCFrame = hrp.CFrame
+        bodyGyro.CFrame = currentCFrame * CFrame.Angles(math.rad(90), 0, 0)
+        
+        -- Désactiver la collision avec les autres joueurs
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+        
     else
+        -- Nettoyer les BodyMovers
+        if bodyGyro then
+            bodyGyro:Destroy()
+            bodyGyro = nil
+        end
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+            bodyVelocity = nil
+        end
+        
+        -- Réactiver la collision
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = true
+            end
+        end
+        
         -- Remettre le personnage debout
         humanoid.PlatformStand = false
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
         
         -- Réorienter correctement
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local pos = hrp.Position
-            hrp.CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, 0)
-        end
+        local pos = hrp.Position
+        hrp.CFrame = CFrame.new(pos)
     end
 end
 
@@ -239,12 +286,20 @@ local function farmStep()
             return
         end
         
-        -- Déplacer le personnage couché vers la pièce
-        local targetCFrame = coin.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+        -- Calculer la position cible en gardant l'orientation couchée
+        local direction = (coin.Position - hrp.Position).Unit
+        local targetPosition = coin.Position
+        local currentRotation = hrp.CFrame - hrp.Position
+        local targetCFrame = CFrame.new(targetPosition) * currentRotation
         
         local tweenTime = distance / speed
         local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
         currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+        
+        -- Maintenir l'orientation pendant le déplacement
+        if bodyGyro then
+            bodyGyro.CFrame = targetCFrame * CFrame.Angles(math.rad(90), 0, 0)
+        end
         
         local connection
         connection = currentTween.Completed:Connect(function()
