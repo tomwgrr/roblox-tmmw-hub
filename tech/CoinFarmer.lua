@@ -116,8 +116,15 @@ local function findNearestCoin()
 end
 
 local function farmStep()
-    if not autoFarm or isBagFull or isProcessing then 
+    if not autoFarm or isProcessing then 
         return 
+    end
+    
+    -- Si le bag est plein, attendre qu'il se vide
+    if isBagFull then
+        task.wait(2)
+        task.defer(farmStep)
+        return
     end
     
     isProcessing = true
@@ -211,9 +218,9 @@ function CoinFarmer.initialize()
     
     coinCollected.OnClientEvent:Connect(function(bagName, currentCoins, maxCoins, _)
         if currentCoins >= maxCoins then
-            isBagFull = true
-            if autoFarm then
-                warn("[TMMW] Coin bag is full! Auto farm stopped.")
+            if not isBagFull then
+                isBagFull = true
+                warn("[TMMW] Coin bag is full! Waiting for space...")
                 if currentTween then
                     currentTween:Cancel()
                     currentTween = nil
@@ -221,7 +228,13 @@ function CoinFarmer.initialize()
                 isProcessing = false
             end
         else
-            isBagFull = false
+            if isBagFull then
+                isBagFull = false
+                print("[TMMW] Coin bag has space! Resuming auto farm...")
+                if autoFarm then
+                    task.defer(farmStep)
+                end
+            end
         end
     end)
 end
