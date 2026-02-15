@@ -72,6 +72,11 @@ local function updateCoinCache()
         end
     end
     
+    -- Si aucune pièce trouvée, pas besoin de trier
+    if #tempCoins == 0 then
+        return
+    end
+    
     -- Trier par distance et garder seulement les 15 plus proches
     table.sort(tempCoins, function(a, b) return a.distance < b.distance end)
     
@@ -82,6 +87,11 @@ end
 
 local function findNearestCoin()
     updateCoinCache()
+    
+    -- Si le cache est vide, pas la peine de chercher
+    if #coinCache == 0 then
+        return nil
+    end
     
     local hrp = getHRP()
     local hrpPos = hrp.Position
@@ -113,50 +123,53 @@ local function farmStep()
     isProcessing = true
     
     local success, result = pcall(function()
-        local hrp = getHRP()
         local coin = findNearestCoin()
         
-        if coin then
-            if currentTween then
-                currentTween:Cancel()
-                currentTween = nil
-            end
-            
-            local distance = (coin.Position - hrp.Position).Magnitude
-            
-            if distance < 3 then
-                coin.Parent = nil
-                task.wait(cooldown)
-                isProcessing = false
-                task.defer(farmStep)
-                return
-            end
-            
-            local tweenTime = distance / speed
-            local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-            currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
-            
-            local connection
-            connection = currentTween.Completed:Connect(function()
-                connection:Disconnect()
-                currentTween = nil
-                task.wait(cooldown)
-                isProcessing = false
-                task.defer(farmStep)
-            end)
-            
-            currentTween:Play()
-        else
+        -- Si aucune pièce dans la zone, attendre plus longtemps avant de revérifier
+        if not coin then
             isProcessing = false
-            task.wait(1)
+            task.wait(2)
             task.defer(farmStep)
+            return
         end
+        
+        local hrp = getHRP()
+        
+        if currentTween then
+            currentTween:Cancel()
+            currentTween = nil
+        end
+        
+        local distance = (coin.Position - hrp.Position).Magnitude
+        
+        if distance < 3 then
+            coin.Parent = nil
+            task.wait(cooldown)
+            isProcessing = false
+            task.defer(farmStep)
+            return
+        end
+        
+        local tweenTime = distance / speed
+        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
+        currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = coin.CFrame})
+        
+        local connection
+        connection = currentTween.Completed:Connect(function()
+            connection:Disconnect()
+            currentTween = nil
+            task.wait(cooldown)
+            isProcessing = false
+            task.defer(farmStep)
+        end)
+        
+        currentTween:Play()
     end)
     
     if not success then
         warn("[TMMW] Farm error:", result)
         isProcessing = false
-        task.wait(1)
+        task.wait(2)
         task.defer(farmStep)
     end
 end
