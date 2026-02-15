@@ -20,6 +20,9 @@ local cacheUpdateInterval = 0.8
 local lastCacheUpdate = 0
 local coinsFolder = nil
 
+-- Monitoring du bag
+local bagMonitorRunning = false
+
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
@@ -35,6 +38,54 @@ local function findCoinsFolder()
         end
     end
     return coinsFolder
+end
+
+local function checkBagStatus()
+    local playerGui = player:WaitForChild("PlayerGui")
+    local mainGui = playerGui:FindFirstChild("MainGUI")
+    if not mainGui then return false end
+    
+    local coinBags = mainGui:FindFirstChild("CoinBags")
+    if not coinBags then return false end
+    
+    local container = coinBags:FindFirstChild("Container")
+    if not container then return false end
+    
+    -- Vérifier si au moins un bag a de la place
+    for _, bag in pairs(container:GetChildren()) do
+        if bag:IsA("Frame") and bag.Visible then
+            local fullIcon = bag:FindFirstChild("Full")
+            if fullIcon and not fullIcon.Visible then
+                return false -- Au moins un bag a de la place
+            end
+        end
+    end
+    
+    return true -- Tous les bags visibles sont pleins
+end
+
+local function monitorBag()
+    while autoFarm and bagMonitorRunning do
+        local bagIsFull = checkBagStatus()
+        
+        if bagIsFull and not isBagFull then
+            isBagFull = true
+            warn("[TMMW] Coin bag is full! Waiting for space...")
+            if currentTween then
+                currentTween:Cancel()
+                currentTween = nil
+            end
+            isProcessing = false
+        elseif not bagIsFull and isBagFull then
+            isBagFull = false
+            print("[TMMW] Coin bag has space! Resuming auto farm...")
+            if autoFarm and not isProcessing then
+                task.defer(farmStep)
+            end
+        end
+        
+        task.wait(3) -- Vérifier toutes les 3 secondes
+    end
 end
 
 local function updateCoinCache()
@@ -188,6 +239,13 @@ function CoinFarmer.setAutoFarm(state)
         isProcessing = false
         table.clear(coinCache)
         lastCacheUpdate = 0
+        
+        -- Démarrer le monitoring du bag
+        if not bagMonitorRunning then
+            bagMonitorRunning = true
+            task.spawn(monitorBag)
+        end
+        
         task.defer(farmStep)
     else
         if currentTween then
@@ -195,6 +253,7 @@ function CoinFarmer.setAutoFarm(state)
             currentTween = nil
         end
         isProcessing = false
+        bagMonitorRunning = false
     end
     return true
 end
@@ -231,7 +290,7 @@ function CoinFarmer.initialize()
             if isBagFull then
                 isBagFull = false
                 print("[TMMW] Coin bag has space! Resuming auto farm...")
-                if autoFarm then
+                if autoFarm and not isProcessing then
                     task.defer(farmStep)
                 end
             end
