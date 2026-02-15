@@ -13,6 +13,7 @@ local isBagFull = false
 local MAX_DISTANCE = 100
 local isProcessing = false
 local MAX_COINS_IN_CACHE = 15
+local useLieDownMode = false
 
 -- Cache optimisé
 local coinCache = {}
@@ -26,6 +27,7 @@ local bagMonitorRunning = false
 -- Système de maintien de position couchée
 local bodyGyro = nil
 local bodyVelocity = nil
+local anchorConnection = nil
 
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
@@ -41,35 +43,17 @@ local function makeCharacterLieDown(state)
     if not humanoid or not hrp then return end
     
     if state then
+        -- Ancrer le HumanoidRootPart pour bloquer toute physique
+        hrp.Anchored = true
+        
         -- Désactiver toutes les animations
         for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
             track:Stop()
         end
         
-        -- Mettre le personnage en mode Physics
-        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-        humanoid.PlatformStand = true
-        
-        -- Créer un BodyGyro pour maintenir l'orientation
-        if not bodyGyro then
-            bodyGyro = Instance.new("BodyGyro")
-            bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            bodyGyro.P = 10000
-            bodyGyro.D = 500
-            bodyGyro.Parent = hrp
-        end
-        
-        -- Créer un BodyVelocity pour contrôler le mouvement
-        if not bodyVelocity then
-            bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.MaxForce = Vector3.new(0, 9e9, 0)
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.Parent = hrp
-        end
-        
         -- Incliner le personnage à 90 degrés (couché)
-        local currentCFrame = hrp.CFrame
-        bodyGyro.CFrame = currentCFrame * CFrame.Angles(math.rad(90), 0, 0)
+        local currentPos = hrp.Position
+        hrp.CFrame = CFrame.new(currentPos) * CFrame.Angles(math.rad(90), 0, 0)
         
         -- Désactiver la collision avec les autres joueurs
         for _, part in pairs(char:GetDescendants()) do
@@ -79,15 +63,8 @@ local function makeCharacterLieDown(state)
         end
         
     else
-        -- Nettoyer les BodyMovers
-        if bodyGyro then
-            bodyGyro:Destroy()
-            bodyGyro = nil
-        end
-        if bodyVelocity then
-            bodyVelocity:Destroy()
-            bodyVelocity = nil
-        end
+        -- Désancrer
+        hrp.Anchored = false
         
         -- Réactiver la collision
         for _, part in pairs(char:GetDescendants()) do
@@ -95,10 +72,6 @@ local function makeCharacterLieDown(state)
                 part.CanCollide = true
             end
         end
-        
-        -- Remettre le personnage debout
-        humanoid.PlatformStand = false
-        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
         
         -- Réorienter correctement
         local pos = hrp.Position
@@ -154,6 +127,11 @@ local function monitorBag()
                 currentTween = nil
             end
             isProcessing = false
+            
+            -- Remettre debout si le bag est plein
+            if useLieDownMode then
+                makeCharacterLieDown(false)
+            end
         elseif not bagIsFull and isBagFull then
             isBagFull = false
             print("[TMMW] Coin bag has space! Resuming auto farm...")
@@ -261,12 +239,20 @@ local function farmStep()
     local success, result = pcall(function()
         local coin = findNearestCoin()
         
-        -- Si aucune pièce dans la zone, attendre plus longtemps avant de revérifier
+        -- Si aucune pièce dans la zone, remettre debout et attendre
         if not coin then
+            if useLieDownMode then
+                makeCharacterLieDown(false)
+            end
             isProcessing = false
             task.wait(2)
             task.defer(farmStep)
             return
+        end
+        
+        -- Se mettre couché uniquement quand on va collecter
+        if useLieDownMode then
+            makeCharacterLieDown(true)
         end
         
         local hrp = getHRP()
@@ -286,25 +272,36 @@ local function farmStep()
             return
         end
         
-        -- Calculer la position cible en gardant l'orientation couchée
-        local direction = (coin.Position - hrp.Position).Unit
+        -- Calculer la position cible
         local targetPosition = coin.Position
-        local currentRotation = hrp.CFrame - hrp.Position
-        local targetCFrame = CFrame.new(targetPosition) * currentRotation
+        local targetCFrame
+        
+        if useLieDownMode then
+            -- Garder l'orientation couchée pendant le déplacement
+            targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(math.rad(90), 0, 0)
+        else
+            targetCFrame = CFrame.new(targetPosition)
+        end
+        
+        -- Désancrer temporairement pour le déplacement
+        if useLieDownMode then
+            hrp.Anchored = false
+        end
         
         local tweenTime = distance / speed
         local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
         currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
         
-        -- Maintenir l'orientation pendant le déplacement
-        if bodyGyro then
-            bodyGyro.CFrame = targetCFrame * CFrame.Angles(math.rad(90), 0, 0)
-        end
-        
         local connection
         connection = currentTween.Completed:Connect(function()
             connection:Disconnect()
             currentTween = nil
+            
+            -- Réancrer après le déplacement
+            if useLieDownMode then
+                hrp.Anchored = true
+            end
+            
             task.wait(cooldown)
             isProcessing = false
             task.defer(farmStep)
@@ -315,6 +312,9 @@ local function farmStep()
     
     if not success then
         warn("[TMMW] Farm error:", result)
+        if useLieDownMode then
+            makeCharacterLieDown(false)
+        end
         isProcessing = false
         task.wait(2)
         task.defer(farmStep)
@@ -328,9 +328,6 @@ function CoinFarmer.setAutoFarm(state)
         isProcessing = false
         table.clear(coinCache)
         lastCacheUpdate = 0
-        
-        -- Mettre le personnage couché
-        makeCharacterLieDown(true)
         
         -- Démarrer le monitoring du bag
         if not bagMonitorRunning then
@@ -347,9 +344,22 @@ function CoinFarmer.setAutoFarm(state)
         isProcessing = false
         bagMonitorRunning = false
         
-        -- Remettre le personnage debout
+        -- Remettre le personnage debout si mode couché activé
+        if useLieDownMode then
+            makeCharacterLieDown(false)
+        end
+    end
+    return true
+end
+
+function CoinFarmer.setLieDownMode(state)
+    useLieDownMode = state
+    
+    -- Si on désactive le mode couché pendant l'auto farm, remettre debout
+    if not state and autoFarm then
         makeCharacterLieDown(false)
     end
+    
     return true
 end
 
@@ -394,10 +404,8 @@ function CoinFarmer.initialize()
     
     -- Remettre debout si le personnage meurt
     player.CharacterAdded:Connect(function(char)
-        if autoFarm then
-            task.wait(1)
-            makeCharacterLieDown(true)
-        end
+        task.wait(1)
+        -- Ne pas se remettre couché automatiquement, attendre d'avoir des pièces à collecter
     end)
 end
 
