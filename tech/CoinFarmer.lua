@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 local CoinFarmer = {}
@@ -8,6 +9,7 @@ local autoFarm = false
 local speed = 25
 local cooldown = 0.05
 local currentTween = nil
+local isBagFull = false
 
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
@@ -33,7 +35,7 @@ local function findNearestCoin()
 end
 
 local function farmStep()
-    if not autoFarm then return end
+    if not autoFarm or isBagFull then return end
     
     local hrp = getHRP()
     local coin = findNearestCoin()
@@ -72,6 +74,7 @@ end
 function CoinFarmer.setAutoFarm(state)
     autoFarm = state
     if state then
+        isBagFull = false
         task.spawn(farmStep)
     else
         if currentTween then
@@ -94,6 +97,26 @@ end
 
 function CoinFarmer.initialize()
     print("[TMMW] CoinFarmer initialized")
+    
+    -- Écouter l'événement CoinCollected pour détecter si le bag est plein
+    local remotes = ReplicatedStorage:WaitForChild("Remotes")
+    local gameplay = remotes:WaitForChild("Gameplay")
+    local coinCollected = gameplay:WaitForChild("CoinCollected")
+    
+    coinCollected.OnClientEvent:Connect(function(bagName, currentCoins, maxCoins, _)
+        if currentCoins >= maxCoins then
+            isBagFull = true
+            if autoFarm then
+                warn("[TMMW] Coin bag is full! Auto farm stopped.")
+                if currentTween then
+                    currentTween:Cancel()
+                    currentTween = nil
+                end
+            end
+        else
+            isBagFull = false
+        end
+    end)
 end
 
 return CoinFarmer
