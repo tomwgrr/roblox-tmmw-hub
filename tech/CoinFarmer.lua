@@ -135,7 +135,8 @@ local function monitorBag()
         elseif not bagIsFull and isBagFull then
             isBagFull = false
             print("[TMMW] Coin bag has space! Resuming auto farm...")
-            if autoFarm and not isProcessing then
+            isProcessing = false
+            if autoFarm then
                 task.defer(farmStep)
             end
         end
@@ -223,14 +224,22 @@ local function findNearestCoin()
 end
 
 local function farmStep()
-    if not autoFarm or isProcessing then 
+    -- Vérifier AVANT tout si on doit s'arrêter
+    if not autoFarm then 
         return 
     end
     
     -- Si le bag est plein, attendre qu'il se vide
     if isBagFull then
-        task.wait(2)
+        if useLieDownMode then
+            makeCharacterLieDown(false)
+        end
+        task.wait(3)
         task.defer(farmStep)
+        return
+    end
+    
+    if isProcessing then
         return
     end
     
@@ -304,7 +313,11 @@ local function farmStep()
             
             task.wait(cooldown)
             isProcessing = false
-            task.defer(farmStep)
+            
+            -- Vérifier à nouveau avant de continuer
+            if autoFarm and not isBagFull then
+                task.defer(farmStep)
+            end
         end)
         
         currentTween:Play()
@@ -317,7 +330,11 @@ local function farmStep()
         end
         isProcessing = false
         task.wait(2)
-        task.defer(farmStep)
+        
+        -- Vérifier avant de relancer
+        if autoFarm and not isBagFull then
+            task.defer(farmStep)
+        end
     end
 end
 
@@ -395,7 +412,8 @@ function CoinFarmer.initialize()
             if isBagFull then
                 isBagFull = false
                 print("[TMMW] Coin bag has space! Resuming auto farm...")
-                if autoFarm and not isProcessing then
+                isProcessing = false
+                if autoFarm then
                     task.defer(farmStep)
                 end
             end
